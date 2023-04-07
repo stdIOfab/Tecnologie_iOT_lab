@@ -1,33 +1,33 @@
 //#include <MBED_RPi_Pico_TimerInterrupt.h>
 #include <MBED_RPi_Pico_TimerInterrupt.h>
-const int Rled_pin = 2; 
-const int Bled_pin = 3; 
+const int RLED_PIN = 2;
+const int BLED_PIN = 3;
 
-const long r_half_period = 100L;
-const long g_half_period = 250L;
+const long R_HALF_PERIOD = 200L;
+const long B_HALF_PERIOD = 300L;
 
-int redlstate = LOW;
-int greenlstate = LOW;
+int redLedState = LOW;
+int blueLedState = LOW;
 
-MBED_RPI_PICO_Timer ITimer1(1); 
+MBED_RPI_PICO_Timer ITimer1(1);
 
-void setup() {
-  pinMode(rled_pin, OUTPUT);
-  pinMode(gled_pin, OUTPUT);
-  ITimer1.setInterval(g_half_period*1000, blinkGreen) ;
+void blinkBlue(uint alarm_num){
+  TIMER_ISR_START(alarm_num);
+  digitalWrite(BLED_PIN, blueLedState);
+  blueLedState = !blueLedState;
+  TIMER_ISR_END(alarm_num);
 }
 
-void blinkGreen(uint alarm){
-  TIMER_ISR_START(alarm);
-  digitalWrite(gled_pin, greenlstate);
-  greenlstate = !greenlstate; 
-  TIMER_ISR_END(alarm); 
-} 
+void setup() {
+  pinMode(RLED_PIN, OUTPUT);
+  pinMode(BLED_PIN, OUTPUT);
+  ITimer1.setInterval(B_HALF_PERIOD*1000, blinkBlue) ;
+}
 
 void loop() {
-   digitalWrite(rled_pin, redlstate);
-   redlstate = !redlstate; 
-   delay(r_half_period);
+   digitalWrite(RLED_PIN, redLedState);
+   redLedState = !redLedState; 
+   delay(R_HALF_PERIOD);
 }
 
 
