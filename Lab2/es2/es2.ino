@@ -179,7 +179,16 @@ void onPDMdata(){
 
 void micMustDo(){};
 
-void printMenu(){};
+void printMenu(){
+  Serial.println("Guida ai comandi del Controller Smart Home:");
+  Serial.println("  Parametri modificabili:");
+  Serial.println("    - <CMIN:<+/-VALUE>: modifica la temperatura minima di raffreddamento.");
+  Serial.println("    - <CMAX:<+/-VALUE>: modifica la temperatura massima di raffreddamento.");
+  Serial.println("    - <HMAX:<+/-VALUE>: modifica la temperatura massima di riscaldamento.");
+  Serial.println("    - <HMIN:<+/-VALUE>: modifica la temperatura minima di riscaldamento.");
+  Serial.println("    - <TIMEOUT_PIR:<+/-VALUE>: modifica il periodo dopo il quale, senza ulteriori movimenti, la casa viene considerata vuota.");
+  Serial.println("    - <TIMEOUT_MIC:<+/-VALUE>: modifica il periodo dopo il quale, senza ulteriori suoni, la casa viene considerata vuota.");
+}
 
 void setup() {
   Serial.begin(9600);
