@@ -32,6 +32,9 @@ volatile bool presence = false;
 const unsigned int SAMPLE_FREQ = 16000;
 const unsigned short N_CHANNELS = 1;
 const unsigned int SOUND_THRESHOLD = 500;
+volatile int n_sound_events = 0;
+unsigned int timeout_MIC = 10; //riferito a minuti
+const unsigned int PRESENCE_THRESHOLD = 20;
 short sampleBuffer[256];
 volatile int samplesRead = 0;
 const unsigned int NEW_TRY_PDM = 1500;//tempo in ms
@@ -139,7 +142,7 @@ void presenceDetected(){
 }
 
 void checkPresence(){
-  if((millis() - last_presence) < (60000*timeout_PIR) && last_presence != 0){
+  if(((millis() - last_presence) < (60000*timeout_PIR) && last_presence != 0) || ((millis() - last_presence) < (60000*timeout_MIC) && last_presence != 0)){
     presence = true;
   }else{
     presence = false;
@@ -216,9 +219,13 @@ void loop() {
     }
       //Serial.print(" R:");
       if(abs(sampleBuffer[i]) > SOUND_THRESHOLD){
-      Serial.println("1");
+        Serial.println("1");
+        n_sound_events++;
+        if(n_sound_events >= PRESENCE_THRESHOLD){
+          presenceDetected()
+        }       
       }else{
-      Serial.println("0");
+        Serial.println("0");
       }
     }
     samplesRead = 0;
