@@ -13,8 +13,8 @@ const int TEMPSENSOR_PIN = 14;
 
 //Fan var and const
 const int FAN_PIN = 5;
-const int MIN_SPEED = 70;
-const int MAX_SPEED = 255;
+const int MIN_SPEED = 70; //valore maggiore di 0 in quanto il motore non riesce a mettersi in rotazione sotto questa soglia
+const int MAX_SPEED = 255;//massimo valore PWM
 byte dutyCycle = 0;
 
 //LED var and const 
@@ -161,7 +161,7 @@ void checkInput(){
       Serial.println(" minuti.");
     }
     else if(letter.substring(0, 9).equals("HC_DELTA:") && isFloat(letter.substring(9))){
-      heating_cooling_delta = abs(letter.substring(9).toInt());
+      heating_cooling_delta = abs(letter.substring(9).toFloat());
       Serial.print("Delta temperatura risparmio energetico in modalità assenza impostata a: ");
       Serial.println(heating_cooling_delta);
     }
@@ -169,6 +169,7 @@ void checkInput(){
       Serial.println("Inserimento non corretto.");
     }
   }
+  yield();
 }
 
 //aggiorna la variabile inserendo quando è stato rilevato l'evento
@@ -178,7 +179,7 @@ void presenceDetected(){
 
 //attraverso i vari timeout del mic e del PIR aggiorna costantemente la variabile presence per determinare se è presente qualcuno in casa
 void checkPresence(){
-  if(((millis() - last_PIR_presence) < (60000*timeout_PIR) && last_PIR_presence != 0) || ((millis() - last_PIR_presence) < (60000*timeout_mic) && last_PIR_presence != 0)){
+  if(((millis() - last_PIR_presence) < (60000*timeout_PIR) && last_PIR_presence != 0) || ((millis() - last_mic_presence) < (60000*timeout_mic) && last_mic_presence != 0)){
     presence = true;
   }else{
     presence = false;
