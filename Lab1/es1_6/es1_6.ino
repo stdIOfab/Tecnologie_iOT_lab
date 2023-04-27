@@ -10,7 +10,8 @@ const float KELVIN = 273.15;
 const int TEMPSENSOR_PIN = 14;
 const int ADDRESS_I2C = 0xA0;
 const int refresh = 30000;
-int rawRead, ready = 0;
+int rawRead;
+int ready;
 float R;
 
 LiquidCrystal_PCF8574 lcd(ADDRESS_I2C);
@@ -36,14 +37,11 @@ void printLCD(float temp){
 }
 
 void setup() {
-int error;
-
   Wire.begin();
   Wire.beginTransmission(0xA0);
-  error = Wire.endTransmission();
+  ready = Wire.endTransmission();
 
-  if (error == 0) {
-    ready = 1;
+  if (ready == 0) {
     lcd.begin(16, 2);
     lcd.setBacklight(255);
     lcd.home();
