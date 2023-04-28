@@ -107,6 +107,9 @@ void checkInput(){
   if(Serial.available() > 0){
     letter = Serial.readString();
     letter.toUpperCase();
+		if(letter.charAt(letter.length()-1)=='\n'){
+			letter = letter.substring(0, letter.length());
+  		}
     if(letter.substring(0, 5).equals("CMIN:") && isFloat(letter.substring(5))){
       check = letter.substring(5).toFloat();
       if(check < coolingMaxTemp && check > heatingMaxTemp){
