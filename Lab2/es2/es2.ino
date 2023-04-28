@@ -97,7 +97,7 @@ bool isFloat(String tString){
 //la funzione di libreria map crea una mappatura su interi, operando su float va creata una nuova funzione analoga
 float mapFloat(float x, float in_min, float in_max, float out_min, float out_max)
 {
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+  return (((x - in_min) * (out_max - out_min) / (in_max - in_min)) + out_min);
 }
 
 //verifica attraverso lo Scheduler la presenza di dati in input dal terminale, li verifica e nel caso aggiorna le variabili globali
@@ -270,7 +270,7 @@ void printLCD(){
   sprintf(charBuffer, "T:%.1f C  Pres:%d", readTemp(), presence);
   lcd.print(charBuffer);
   lcd.setCursor(0, 1);
-  sprintf(charBuffer, "AC:%d\%% HT:%d\%%", mapFloat(dutyCycle, 0, MAX_SPEED, 0, 100), mapFloat(brightness, 0, MAX_BRIGHTNESS, 0, 100));
+  sprintf(charBuffer, "AC:%.1f\%% HT:%.1f\%%", mapFloat(dutyCycle, 0, MAX_SPEED, 0, 100), mapFloat(brightness, 0, MAX_BRIGHTNESS, 0, 100));
   lcd.print(charBuffer);
   delay(LCD_DELAY);
   lcd.clear();
