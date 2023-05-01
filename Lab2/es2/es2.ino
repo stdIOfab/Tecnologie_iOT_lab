@@ -1,3 +1,5 @@
+//Software non ottimale dal punto di vista energetico, ma essendo necessario l'ascolto continuo dal microfono e' pressoche' inutile cercare di ottimizzare ulteriormente i consumi
+
 #include <Arduino.h>
 #include <Wire.h>
 #include <LiquidCrystal_PCF8574.h>
@@ -45,6 +47,27 @@ const int ADDRESS_I2C = 0xA0; //indirizzo i2c dello schermo LCD
 LiquidCrystal_PCF8574 lcd(ADDRESS_I2C);
 short LCD_ready = -1; //indica se lo schermo LCD e' stato avviato correttamente
 const int LCD_DELAY = 4000; //indica la frequenza di aggiornamento del display LCD
+byte ecoChar[8] = {
+	0b00100,
+	0b01010,
+	0b10001,
+	0b10101,
+	0b10101,
+	0b01110,
+	0b00100,
+	0b00100
+};
+
+byte presenceChar[8] = {
+	0b01110,
+	0b01110,
+	0b00100,
+	0b11111,
+	0b10101,
+	0b00100,
+	0b01010,
+	0b11011
+};
 
 //Program var
 volatile float coolingMaxTemp = 30, coolingMinTemp = 25; //setpoint AC
@@ -52,6 +75,7 @@ volatile float heatingMaxTemp = 24, heatingMinTemp = 18;  //setpoint HT
 volatile float heating_cooling_delta = 5; //se non vengono rilevate persone abbassa/alza del valore i setpoint mettendosi in modalità risparmio energetico
 unsigned int REFRESH = 1500; //REFRESH dei valori del programma dal loop()
 volatile bool presence = false; //indica se è presente qualcuno a nella stanza
+volatile byte auto_eco = 1; //indica se è attiva la modalita' di risparmio energetica automatica, abilitata di default
 
 //funzione per la lettura della temperatura dal sensore, restituisce in float i gradi centigradi
 float readTemp(){
@@ -165,6 +189,16 @@ void checkInput(){
       Serial.print("Delta temperatura risparmio energetico in modalità assenza impostata a: ");
       Serial.println(heating_cooling_delta);
     }
+    else if(letter.substring(0, 9).equals("AUTO_ECO:") && isFloat(letter.substring(9))){
+      check = abs(letter.substring(9).toInt());
+      if(check == 0 || check == 1){
+        auto_eco = check;
+        Serial.print("Modalita' risparmio energetico: ");
+        Serial.println(auto_eco);
+      }else{
+        Serial.println("Modalita' non riconosciuta");
+      }
+    }
     else{
       Serial.println("Inserimento non corretto.");
     }
@@ -179,9 +213,9 @@ void presenceDetected(){
 
 //attraverso i vari timeout del mic e del PIR aggiorna costantemente la variabile presence per determinare se è presente qualcuno in casa
 void checkPresence(){
-  if(((millis() - last_PIR_presence) < (60000*timeout_PIR) && last_PIR_presence != 0) || ((millis() - last_mic_presence) < (60000*timeout_mic) && last_mic_presence != 0)){
+  if((((millis() - last_PIR_presence) < (60000*timeout_PIR) && last_PIR_presence != 0) || ((millis() - last_mic_presence) < (60000*timeout_mic) && last_mic_presence != 0))){
     presence = true;
-  }else{
+  }else if(auto_eco == 1){
     presence = false;
   }
   yield();
@@ -248,7 +282,10 @@ void checkSound(){
 
 //stampa del menu iniziale sul seriale
 void printMenu(){
+  char buffer[300];
   Serial.println("Guida ai comandi del Controller Smart Home:");
+  sprintf(buffer, "Il controller gestisce le periferiche di AC e HT della casa. E' presente una lista di comandi attraverso \n i quali e' possibile modificare il comportamento del sistema. Ricorda che i setpoint sono soggetti ad un delta di risparmio energetico \n nel caso in cui questa modalita' sia attivata. In tal caso i display visualizzeranno il valore attuale tenendo conto del delta, tuttavia il setpoint originale rimarra' invariato.\n");
+  Serial.print(buffer);
   Serial.println("  Parametri modificabili:");
   Serial.println("    - CMIN:<+/-VALUE>: modifica la temperatura minima di raffreddamento.");
   Serial.println("    - CMAX:<+/-VALUE>: modifica la temperatura massima di raffreddamento.");
@@ -257,14 +294,19 @@ void printMenu(){
   Serial.println("    - TIMEOUT_PIR:<+/-VALUE>: modifica il periodo dopo il quale, senza ulteriori movimenti, la casa viene considerata vuota.");
   Serial.println("    - TIMEOUT_MIC:<+/-VALUE>: modifica il periodo dopo il quale, senza ulteriori suoni, la casa viene considerata vuota.");
   Serial.println("    - SOUND_THRESHOLD:<+/-VALUE>: modifica la soglia di rumore per la quale il sistema rileva la presenza.");
+  Serial.println("    - AUTO_ECO:<0/1>: disattiva o attiva il risparmio energetico automatico, abilitato di default");
 }
 
 //stampa sul display LCD dei valori di temperatura, intensita sistemi AC e HT, e setpoint
 void printLCD(){
+  int real_delta = 0;
+  if(!presence){
+    real_delta = heating_cooling_delta;
+  }
   char charBuffer[16];
   lcd.clear();
   lcd.setCursor(0, 0);
-  sprintf(charBuffer, "T:%.1f C  Pres:%d", readTemp(), presence);
+  sprintf(charBuffer, "T:%.1f C <\02>:%d <\01>:%d", readTemp(), presence, auto_eco);
   lcd.print(charBuffer);
   lcd.setCursor(0, 1);
   sprintf(charBuffer, "AC:%d\%% HT:%d\%%", mapFloat(dutyCycle, 0, MAX_SPEED, 0, 100), mapFloat(brightness, 0, MAX_BRIGHTNESS, 0, 100));
@@ -272,10 +314,10 @@ void printLCD(){
   delay(LCD_DELAY);
   lcd.clear();
   lcd.setCursor(0, 0);
-  sprintf(charBuffer, "AC m:%.1f M:%.1f", coolingMinTemp, coolingMaxTemp);
+  sprintf(charBuffer, "AC m:%.1f M:%.1f", coolingMinTemp+real_delta, coolingMaxTemp+real_delta);
   lcd.print(charBuffer);
   lcd.setCursor(0, 1);
-  sprintf(charBuffer, "HT m:%.1f M:%.1f", heatingMinTemp, heatingMaxTemp);
+  sprintf(charBuffer, "HT m:%.1f M:%.1f", heatingMinTemp-real_delta, heatingMaxTemp-real_delta);
   lcd.print(charBuffer);
   delay(LCD_DELAY);
   }
@@ -297,6 +339,8 @@ void setup() {
 
   printMenu();
 
+  lcd.createChar(1, ecoChar);
+  lcd.createChar(2, presenceChar);
   while(LCD_ready!=0){
   Wire.begin();
   Wire.beginTransmission(0xA0);
@@ -314,13 +358,13 @@ void setup() {
   
   Scheduler.startLoop(checkInput);
   Scheduler.startLoop(checkPresence);
+  Scheduler.startLoop(printLCD);
+  Scheduler.startLoop(checkSound);
   attachInterrupt(digitalPinToInterrupt(PIR_PIN), presenceDetected, RISING);
   PDM.onReceive(onPDMdata);
 }
 
 void loop() {
-  printMenu();
-  printLCD();
   checkCooling();
   checkHeating();
   delay(REFRESH);

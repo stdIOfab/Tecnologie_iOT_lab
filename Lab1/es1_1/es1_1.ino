@@ -21,7 +21,7 @@ void blinkBlue(uint alarm_num){
 void setup() {
   pinMode(RLED_PIN, OUTPUT);
   pinMode(BLED_PIN, OUTPUT);
-  ITimer1.setInterval(B_HALF_PERIOD*1000, blinkBlue) ;
+  ITimer1.setInterval(B_HALF_PERIOD*1000, blinkBlue);
 }
 
 void loop() {
