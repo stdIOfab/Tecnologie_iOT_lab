@@ -121,7 +121,7 @@ bool isFloat(String tString){
 //la funzione di libreria map crea una mappatura su interi, operando su float va creata una nuova funzione analoga
 float mapFloat(float x, float in_min, float in_max, float out_min, float out_max)
 {
-  return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+  return (((x - in_min) * (out_max - out_min) / (in_max - in_min)) + out_min);
 }
 
 //verifica attraverso lo Scheduler la presenza di dati in input dal terminale, li verifica e nel caso aggiorna le variabili globali
@@ -131,6 +131,9 @@ void checkInput(){
   if(Serial.available() > 0){
     letter = Serial.readString();
     letter.toUpperCase();
+		if(letter.charAt(letter.length()-1)=='\n'){
+			letter = letter.substring(0, letter.length()-1);
+  		}
     if(letter.substring(0, 5).equals("CMIN:") && isFloat(letter.substring(5))){
       check = letter.substring(5).toFloat();
       if(check < coolingMaxTemp && check > heatingMaxTemp){
@@ -173,10 +176,10 @@ void checkInput(){
       Serial.print(timeout_PIR);
       Serial.println(" minuti.");
     }
-    else if(letter.substring(0, 16).equals("SOUND_THRESHOLD") && isFloat(letter.substring(16))){
+    else if(letter.substring(0, 16).equals("SOUND_THRESHOLD:") && isFloat(letter.substring(16))){
       sound_threshold = abs(letter.substring(16).toInt());
       Serial.print("Soglia rilevamento suoni ambientali impostata a: ");
-      Serial.println(timeout_PIR);
+      Serial.println(sound_threshold);
     }
     else if(letter.substring(0, 12).equals("TIMEOUT_MIC:") && isFloat(letter.substring(12))){
       timeout_mic = abs(letter.substring(12).toInt());
@@ -309,7 +312,7 @@ void printLCD(){
   sprintf(charBuffer, "T:%.1f C <\02>:%d <\01>:%d", readTemp(), presence, auto_eco);
   lcd.print(charBuffer);
   lcd.setCursor(0, 1);
-  sprintf(charBuffer, "AC:%d\%% HT:%d\%%", mapFloat(dutyCycle, 0, MAX_SPEED, 0, 100), mapFloat(brightness, 0, MAX_BRIGHTNESS, 0, 100));
+  sprintf(charBuffer, "AC:%.1f\%% HT:%.1f\%%", mapFloat(dutyCycle, 0, MAX_SPEED, 0, 100), mapFloat(brightness, 0, MAX_BRIGHTNESS, 0, 100));
   lcd.print(charBuffer);
   delay(LCD_DELAY);
   lcd.clear();
