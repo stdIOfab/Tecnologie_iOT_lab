@@ -9,17 +9,17 @@ class TempConverter(object) :
                 dataDict["originalValue"] = params["value"]
                 dataDict["originalUnit"] = params["originalUnit"].upper()
                 if params["originalUnit"].upper() == 'C' and params["targetUnit"].upper() == 'K' :
-                    dataDict["targetValue"] = float(params["value"]) + 273.15
+                    dataDict["targetValue"] = self.celsiusToKelvin(float(params["value"]))
                 if params["originalUnit"].upper() == 'C' and params["targetUnit"].upper() == 'F' :
-                    dataDict["targetValue"] = round((float(params["value"]) * 9 / 5) + 32, 2)
+                    dataDict["targetValue"] = self.celsiusToFahreheit(float(params["value"]))
                 if params["originalUnit"].upper() == 'K' and params["targetUnit"].upper() == 'C' :
-                    dataDict["targetValue"] = float(params["value"]) - 273.15
+                    dataDict["targetValue"] = self.kelvinToCelsius(float(params["value"]))
                 if params["originalUnit"].upper() == 'K' and params["targetUnit"].upper() == 'F' :
-                    dataDict["targetValue"] = round(((float(params["value"]) - 273.15) * 9 / 5) + 32, 2)
+                    dataDict["targetValue"] = self.kelvinToFahrenheit(float(params["value"]))
                 if params["originalUnit"].upper() == 'F' and params["targetUnit"].upper() == 'C' :
-                    dataDict["targetValue"] = round((float(params["value"]) - 32) * 5 / 9, 2)
+                    dataDict["targetValue"] = self.fahrenheitToCelsius(float(params["value"]))
                 if params["originalUnit"].upper() == 'F' and params["targetUnit"].upper() == 'K' :
-                    dataDict["targetValue"] = round(((float(params["value"]) - 32) * 5 / 9) + 273.15, 2)
+                    dataDict["targetValue"] = self.fahrenheitToKelvin(float(params["value"]))
                 dataDict["targetUnit"] = params["targetUnit"].upper()
                 with open('data.json', 'w+') as json_file :
                     json.dump(dataDict, json_file)
@@ -30,6 +30,24 @@ class TempConverter(object) :
                 raise cherrypy.HTTPError(400, "Bad Request :(")
         else :
             raise cherrypy.HTTPError(404, "Not Found :(")
+
+    def celsiusToKelvin(self, temp):
+        return temp + 273.15
+
+    def kelvinToCelsius(self, temp):
+        return temp - 273.15
+
+    def celsiusToFahreheit(self, temp):
+        return round((temp * 9 / 5) + 32, 2)
+
+    def fahrenheitToCelsius(self, temp):
+        return round((temp - 32) * 5 / 9, 2)
+
+    def fahrenheitToKelvin(self, temp):
+        return round(((temp - 32) * 5 / 9) + 273.15, 2)
+
+    def kelvinToFahrenheit(self, temp):
+        return round(((temp - 273.15) * 9 / 5) + 32, 2)
 
 if __name__ == '__main__':
     conf={
