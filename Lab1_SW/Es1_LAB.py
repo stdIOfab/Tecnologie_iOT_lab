@@ -31,6 +31,8 @@ class TempConverter(object) :
         else :
             raise cherrypy.HTTPError(404, "Not Found :(")
 
+    def POST(self,*uri,**params ):
+
     def celsiusToKelvin(self, temp):
         return temp + 273.15
 

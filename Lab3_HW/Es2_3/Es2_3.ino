@@ -1,8 +1,9 @@
 #include <WiFiNINA.h>
 #include "arduino_secret.h"
 #include <ArduinoJson.h>
+#include <ArduinoHttpClient.h>
 
-char server_address[] = "192.168.1.7";
+char server_address[] = "172.20.10.4";
 int server_port = 8080;
 
 char ssid[] = SECRET_SSID;
@@ -10,6 +11,8 @@ char pass[] = SECRET_PASS;
 
 WiFiClient wifi;
 HttpClient client = HttpClient(wifi, server_address, server_port);
+
+int status = WL_IDLE_STATUS;
 
 const int B = 4275;
 const int R0 = 100000;
@@ -29,21 +32,23 @@ float readTemp()
   return temp;
 }
 
-String senMlEncode(String encodeType, float val, String measureUnit) {
+const int capacity = JSON_OBJECT_SIZE(2) + JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(4) + 100;
+DynamicJsonDocument doc_snd(capacity);
+
+String senMlEncode(float val, String measureUnit) {
   doc_snd.clear();
   doc_snd["bn"] = "ArduinoGroup";
   doc_snd["e"][0]["n"] = "temperature";
   doc_snd["e"][1]["t"] = int(millis()/1000);
   doc_snd["e"][2]["v"] = val;
   doc_snd["e"][3]["u"] = measureUnit;
-  }
   String output;
   serializeJson(doc_snd, output);
   return output;
 }
 
+
 void setup() {
-  pinMode(LED_PIN, OUTPUT);
   Serial.begin(9600);
   while(!Serial);
   Serial.println("Seriale inizializzata.");
@@ -57,11 +62,10 @@ void setup() {
   Serial.print("Connected with IP Address: ");
   Serial.println(WiFi.localIP());
 
-  server.begin();
 }
 
 void loop() {
-  
+  String body = senMlEncode(readTemp(), "C");
   client.beginRequest();
   client.post("/log");
   client.sendHeader("Content-Type", "application/json");
@@ -70,4 +74,6 @@ void loop() {
   client.print(body);
   client.endRequest();
   int ret = client.responseStatusCode();
+  Serial.println(ret);
+  delay(8000);
 }
