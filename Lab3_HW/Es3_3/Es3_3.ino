@@ -32,7 +32,7 @@ PubSubClient client(broker_address.c_str(), broker_port, callback, wifi);
 void reconnect() {
   // Loop until connected
   while (client.state() != MQTT_CONNECTED) {
-    if (client.connect("TiotGroup0")) {
+    if (client.connect("TiotGroup2")) {
       client.subscribe((base_topic + String("/led")).c_str());
     } else {
       Serial.print("failed, rc=");
@@ -45,7 +45,7 @@ void reconnect() {
 
 String senMlEncode(String res, float v, String unit) {
   doc_snd.clear();
-  doc_snd["bn"] = "ArduinoGroup";
+  doc_snd["bn"] = "ArduinoGroup2";
   doc_snd["e"][0]["t"] = int(millis()/1000);
   // etc...
   String output;
@@ -54,7 +54,18 @@ String senMlEncode(String res, float v, String unit) {
 }
 
 void setup() {
+  Serial.begin(9600);
+  while(!Serial);
+  Serial.println("Seriale inizializzata.");
+  while (status != WL_CONNECTED) {
+  Serial.print("Attempting to connect to SSID: ");
+  Serial.println(ssid);
+  status = WiFi.begin(ssid, pass);
+  delay(10000);
+  }
 
+  Serial.print("Connected with IP Address: ");
+  Serial.println(WiFi.localIP());
 }
 
 void loop() {
@@ -62,7 +73,7 @@ void loop() {
     reconnect();
   }
   //read sensor and create json message body...
-
+  String body = senMlEncode(readTemp(), "C");
   client.publish((base_topic + String("/temperature")).c_str(), body.c_str()) ;
   client.loop();
 }
