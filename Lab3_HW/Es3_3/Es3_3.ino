@@ -3,9 +3,6 @@
 #include <ArduinoJson.h>
 #include "arduino_secrets.h"
 
-WiFiClient wifi;
-PubSubClient client(broker_address.c_str(), broker_port, callback, wifi);
-
 String broker_address = "test.mosquitto.org";
 int broker_port = 1883;
 
@@ -28,6 +25,9 @@ void callback(char* topic, byte* payload, unsigned int length) {
     }
   }
 }
+
+WiFiClient wifi;
+PubSubClient client(broker_address.c_str(), broker_port, callback, wifi);
 
 void reconnect() {
   // Loop until connected
