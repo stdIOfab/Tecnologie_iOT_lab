@@ -37,7 +37,7 @@ DynamicJsonDocument doc_snd(capacity);
 
 String senMlEncode(float val, String measureUnit) {
   doc_snd.clear();
-  doc_snd["bn"] = "ArduinoGroup";
+  doc_snd["bn"] = "ArduinoGroup2";
   doc_snd["e"][0]["n"] = "temperature";
   doc_snd["e"][1]["t"] = int(millis()/1000);
   doc_snd["e"][2]["v"] = val;
