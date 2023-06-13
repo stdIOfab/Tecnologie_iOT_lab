@@ -1,7 +1,6 @@
-//#include <MBED_RPi_Pico_TimerInterrupt.h>
 #include <MBED_RPi_Pico_TimerInterrupt.h>
-const int RLED_PIN = 2;
-const int BLED_PIN = 3;
+const int RLED_PIN = 2;  //LED rosso collegato al pin 3
+const int BLED_PIN = 3;  //LED blu collegato al pin 2
 
 const long R_HALF_PERIOD = 200L;
 const long B_HALF_PERIOD = 300L;

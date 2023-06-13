@@ -8,23 +8,22 @@ const int R0 = 100000;
 const int T0 = 25;
 const float KELVIN = 273.15;
 const int TEMPSENSOR_PIN = 14;
-const int ADDRESS_I2C = 0xA0;
+
+const int ADDRESS_I2C = 0xA0; // indirizzo i2c dello schermo LCD
+
 const int refresh = 30000;
+
 int rawRead;
 int ready;
 float R;
 
 LiquidCrystal_PCF8574 lcd(ADDRESS_I2C);
 
-float tempCheck(){
-    float temp;
+float readTemp(){
     rawRead = analogRead(TEMPSENSOR_PIN);
-    
     R = (1023.0/rawRead)-1.0;
     R = R0*R;
-
-    temp = 1.0/((log(R/R0)/B)+(1/(KELVIN+T0)))-KELVIN;
-    return temp;
+    return 1.0/((log(R/R0)/B)+(1/(KELVIN+T0)))-KELVIN;
 }
 
 void printLCD(float temp){
@@ -54,8 +53,8 @@ void setup() {
 }
 
 void loop() {
-  if(ready == 1){
-    printLCD(tempCheck());
+  if(ready == 0){
+    printLCD(readTemp());
   }else{
     lcd.clear();
     lcd.print("Errore.");

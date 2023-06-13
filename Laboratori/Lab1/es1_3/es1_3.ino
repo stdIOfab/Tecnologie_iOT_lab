@@ -1,10 +1,10 @@
 const int PIR_PIN = 4;
 const int BLED_PIN = 3;
-int blueLedState = LOW;
+int blueLedState = LOW, refresh = 30000;
 volatile int tot_count = 0;
 
 void checkPresence(){
-  if(blueLedState != HIGH){
+  if(blueLedState != HIGH){ //cambia solo sui fronti di salita
     tot_count++;
   }
   digitalWrite(BLED_PIN, !blueLedState);
@@ -22,8 +22,7 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
-  delay(30000);
+  delay(refresh);
   Serial.print("Eventi registrati: ");
   Serial.println(tot_count);
 }

@@ -1,4 +1,4 @@
-//Software non ottimale dal punto di vista energetico, ma essendo necessario l'ascolto continuo dal microfono e' pressoche' inutile cercare di ottimizzare ulteriormente i consumi
+//Software non ottimale dal punto di vista energetico, in quanto l'arduino non viene mai messo in stato di bassa potenza, tuttavia essendo necessario l'ascolto continuo dal microfono e' pressoche' inutile cercare di ottimizzare ulteriormente i consumi
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -20,11 +20,10 @@ const int MAX_SPEED = 255;//massimo valore PWM
 byte dutyCycle = 0;
 
 //LED var and const 
-const int RLED_PIN = A1;
-const int GLED_PIN = A2;
+const int RLED_PIN = 2;
 const byte MIN_BRIGHTNESS = 0;
 const byte MAX_BRIGHTNESS = 255;
-byte brightness;
+byte brightness = 0;
 
 //PIR var and const
 const int PIR_PIN = 4;
@@ -32,30 +31,26 @@ unsigned int timeout_PIR = 30; //minuti
 unsigned long int last_PIR_presence = 0; //millis() del momento in cui e' stata rilevata l'ultima presenza PIR
 
 //Microphone var and const
-const unsigned int SAMPLE_FREQ = 36000; //campionamento a 36 kHz
+const unsigned int SAMPLE_FREQ = 16000; //campionamento a 16 kHz
 const unsigned short N_CHANNELS = 1; //canale mono
-const unsigned int SOUND_THRESHOLD = 3000; //ampiezza del valore campionato che aziona il battito
-int n_sound_events = 0; //numero di eventi oltre la SOUND_THRESHOLD, si parte con 0
-unsigned long int first_over_threshold; //millis() del primo valore oltre SOUND_THRESHOLD
-unsigned long int last_over_threshold; //millis() dell'ultimo valore oltre SOUND_THRESHOLD
-const unsigned int MAX_PRESENCE_THRESHOLD = 3200; //numero di eventi che devono verificarsi per definire il battito di mani
-const unsigned int MIN_PRESENCE_THRESHOLD = 300; //numero di eventi sopra il quale viene filtrato il rumore
-const unsigned int CLAP_MAX_DURATION = 100; //durata massima di un battito di mani in ms
-const unsigned int CLAP_MIN_DURATION = 50; //durata minima di un battito di mani in ms
-bool first_clap = false; //flag che determina l'avvenimento del primo battito
-unsigned long int first_clap_end = 0; //millis() del rilevamento fine primo clap
-int clap_pause = false; //flag che verifica il periodo di "silenzio" tra un clap e l'altro
-const int min_clap_break = 300; //tempo minimo di pausa tra un clap e l'altro
-const int max_clap_break = 600; //tempo massimo di pausa tra un clap e l'altro
-int double_clap = 0; //tiene conto dei clap effettuati e tramite un operazione di resto accende e spegne il LED tra un clap e l'altro
-short sampleBuffer[512]; //buffer per i dati PDM provenienti adl microfono
-int samplesRead = 0; //byte letti PDM
+const unsigned int NOISE_TIMEOUT = 25; //secondi
+const unsigned int SOUND_REFRESH = 500; //ms
+unsigned int sound_threshold = 500; //ampiezza del valore campionato che aziona la presenza
+volatile int n_sound_events = 0; //numero di eventi che appurano la presenza, si parte con 0
+unsigned int timeout_mic = 10; //riferito a minuti
+volatile unsigned long int last_mic_presence = 0; //millis() del momento in cui e' stata rilevata l'ultima presenza mic
+unsigned long int last_over_threshold;
+const unsigned int PRESENCE_THRESHOLD = 10; //soglia oltre la quale viene appurata la presenza
+short sampleBuffer[256]; //buffer per i dati PDM provenienti adl microfono
+volatile int samplesRead = 0; //byte letti PDM
 
 //LCD const and var
 const int ADDRESS_I2C = 0xA0; //indirizzo i2c dello schermo LCD
 LiquidCrystal_PCF8574 lcd(ADDRESS_I2C);
 short LCD_ready = -1; //indica se lo schermo LCD e' stato avviato correttamente
 const int LCD_DELAY = 4000; //indica la frequenza di aggiornamento del display LCD
+
+//caratteri personalizzati utilizzati nel display LCD
 byte ecoChar[8] = {
 	0b00100,
 	0b01010,
@@ -82,7 +77,7 @@ byte presenceChar[8] = {
 volatile float coolingMaxTemp = 30, coolingMinTemp = 25; //setpoint AC
 volatile float heatingMaxTemp = 24, heatingMinTemp = 18;  //setpoint HT
 volatile float heating_cooling_delta = 5; //se non vengono rilevate persone abbassa/alza del valore i setpoint mettendosi in modalità risparmio energetico
-unsigned int REFRESH = 3000; //REFRESH dei valori del programma dal loop()
+unsigned int REFRESH = 1500; //REFRESH dei valori del programma dal loop()
 volatile bool presence = false; //indica se è presente qualcuno a nella stanza
 volatile byte auto_eco = 0; //indica se è attiva la modalita' di risparmio energetica automatica, abilitata di default
 volatile byte system_status = 1; //indica se i sistemi di riscaldamento e raffreddamento sono attivi
@@ -90,15 +85,13 @@ volatile byte system_status = 1; //indica se i sistemi di riscaldamento e raffre
 //funzione per la lettura della temperatura dal sensore, restituisce in float i gradi centigradi
 float readTemp(){
   int rawRead;
-  float temp, R;
+  float R;
   rawRead = analogRead(TEMPSENSOR_PIN);
     
   R = (1023.0/rawRead)-1.0;
   R = R0*R;
 
-  temp = 1.0/((log(R/R0)/B)+(1/(KELVIN+T0)))-KELVIN;
-  
-  return temp;
+  return 1.0/((log(R/R0)/B)+(1/(KELVIN+T0)))-KELVIN;
 }
 
 //funzione che verifica a partire dal parametro passato sottoforma di stringa se si tratta di un float
@@ -191,6 +184,27 @@ void checkInput(){
         Serial.println("Valore inserito troppo basso. Riprova.");
       }
     }
+    else if(letter.substring(0, 16).equals("SOUND_THRESHOLD:") && isFloat(letter.substring(16))){
+      check = letter.substring(16).toInt();
+      if(check > 0){
+        sound_threshold = check;
+        Serial.print("Soglia rilevamento suoni ambientali impostata a: ");
+        Serial.println(sound_threshold);
+      }else{
+        Serial.println("Valore inserito troppo basso, riprova.");
+      }
+    }
+    else if(letter.substring(0, 12).equals("TIMEOUT_MIC:") && isFloat(letter.substring(12))){
+      check = letter.substring(12).toInt();
+      if(check >= 2*NOISE_TIMEOUT/60){
+        timeout_mic = check;
+        Serial.print("Timeout rilevamento persone tramite microfono integrato impostato a: ");
+        Serial.print(timeout_mic);
+        Serial.println(" minuti.");
+      }else{
+        Serial.println("Valore inserito troppo basso. Riprova.");
+      }
+    }
     else if(letter.substring(0, 9).equals("HC_DELTA:") && isFloat(letter.substring(9))){
       heating_cooling_delta = abs(letter.substring(9).toFloat());
       Serial.print("Delta temperatura risparmio energetico in modalità assenza impostata a: ");
@@ -231,9 +245,13 @@ void PIRpresenceDetected(){
   last_PIR_presence = millis();
 }
 
+void MICpresenceDetected(){
+  last_mic_presence = millis();
+}
+
 //attraverso i vari timeout del mic e del PIR aggiorna costantemente la variabile presence per determinare se è presente qualcuno in casa
 void checkPresence(){
-  if((millis() - last_PIR_presence) < (60000*timeout_PIR) && last_PIR_presence != 0){
+  if((((millis() - last_PIR_presence) < (60000*timeout_PIR) && last_PIR_presence != 0) || ((millis() - last_mic_presence) < (60000*timeout_mic) && last_mic_presence != 0))){
     presence = true;
   }else{
     presence = false;
@@ -279,6 +297,29 @@ void onPDMdata(){
   samplesRead = PDM.read(sampleBuffer, bytesAvailable) / 2;
 }
 
+//controlla i dati provenienti dal microfono per verificare se vi è una presenza all'interno della casa
+void checkSound(){
+  if(samplesRead != 0){
+    for(int i=0; i < samplesRead; i++){
+      if(abs(sampleBuffer[i]) > sound_threshold){
+        last_over_threshold = millis();
+        n_sound_events++;
+        break;
+        }       
+    }
+    if(millis() - last_over_threshold < 1000*NOISE_TIMEOUT){
+      if(n_sound_events > PRESENCE_THRESHOLD){
+        MICpresenceDetected();
+      }
+    }else{
+      n_sound_events = 0;
+    }
+    samplesRead = 0;
+  }
+  yield();
+  delay(SOUND_REFRESH);
+}
+
 //stampa del menu iniziale sul seriale
 void printMenu(){
   char buffer[500];
@@ -291,6 +332,8 @@ void printMenu(){
   Serial.println("    - HMAX:<+/-VALUE>: modifica la temperatura massima di riscaldamento.");
   Serial.println("    - HMIN:<+/-VALUE>: modifica la temperatura minima di riscaldamento.");
   Serial.println("    - TIMEOUT_PIR:<+/-VALUE>: modifica il periodo dopo il quale, senza ulteriori movimenti, la casa viene considerata vuota.");
+  Serial.println("    - TIMEOUT_MIC:<+/-VALUE>: modifica il periodo dopo il quale, senza ulteriori suoni, la casa viene considerata vuota.");
+  Serial.println("    - SOUND_THRESHOLD:<+/-VALUE>: modifica la soglia di rumore per la quale il sistema rileva la presenza.");
   Serial.println("    - AUTO_ECO:<0/1>: disattiva o attiva il risparmio energetico automatico, disabilitata di default");
   Serial.println("    - SYS_STATUS:<0/1>: disattiva o attiva l'intero sistema, abilitato di default");
 }
@@ -324,11 +367,15 @@ void printLCD(){
 void setup() {
   pinMode(FAN_PIN, OUTPUT);
   analogWrite(FAN_PIN, dutyCycle);
+
+  pinMode(RLED_PIN, OUTPUT);
+  analogWrite(RLED_PIN, brightness);
   
   Serial.begin(9600);
   while(!Serial);
   Serial.println("Monitor Seriale inizializzato...");
   
+  PDM.setBufferSize(256);
   if(!PDM.begin(1, 16000)) {
     Serial.println("Impossibile avviare i processi per l'ascolto dal microfono integrato, in attesa di un nuovo tentativo...");
     while (1);
@@ -357,51 +404,13 @@ void setup() {
   Scheduler.startLoop(checkInput);
   Scheduler.startLoop(checkPresence);
   Scheduler.startLoop(printLCD);
+  Scheduler.startLoop(checkSound);
   attachInterrupt(digitalPinToInterrupt(PIR_PIN), PIRpresenceDetected, RISING);
   PDM.onReceive(onPDMdata);
 }
 
 void loop() {
-  if(samplesRead != 0){
-    for(int i=0; i < samplesRead; i++){
-      if(abs(sampleBuffer[i]) > SOUND_THRESHOLD){
-        if(n_sound_events == 0){
-          first_over_threshold = millis();
-        }
-        n_sound_events++;
-        last_over_threshold = millis();
-        }       
-    }
-    if(n_sound_events > MAX_PRESENCE_THRESHOLD && (last_over_threshold-first_over_threshold) > CLAP_MIN_DURATION && (last_over_threshold-first_over_threshold) < CLAP_MAX_DURATION){
-      if(!first_clap){
-        first_clap = true;
-        first_clap_end = millis();
-      }
-      if(first_clap && clap_pause){
-        Serial.println(double_clap++);
-        first_clap = false;
-        clap_pause = false;
-      }
-      n_sound_events = 0;
-      //Serial.println("Reset");
-    }
-    if(first_clap && (millis()-first_clap_end) > min_clap_break && n_sound_events < MIN_PRESENCE_THRESHOLD){
-      clap_pause = true;
-    }
-    if(millis()-first_clap_end > max_clap_break){
-      clap_pause = false;
-      first_clap = false;
-    }
-    if(millis()-first_over_threshold > CLAP_MAX_DURATION && !first_clap){
-      //Serial.println("Timeout");
-      n_sound_events = 0;
-    }
-  }
-  if(double_clap%2 == 0){
-    digitalWrite(GLED_PIN, LOW);
-  }else{
-    digitalWrite(GLED_PIN, HIGH);
-  }
   checkCooling();
   checkHeating();
+  delay(REFRESH);
 }

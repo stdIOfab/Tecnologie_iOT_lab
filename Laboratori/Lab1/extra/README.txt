@@ -1,0 +1,3 @@
+**README**
+
+Abbiamo avuto dei problemi nel trovare l'indirizzo i2c dello schermo LCD. Infatti utilizzando lo sketch di esempio di Arduino MBED OS andava in crash. A quanto pare questo perchè utilizzando l'indirizzo i2c non corretto (probabilmente pure su un numero diverso di bit) il sistema non riusciva a gestire l'errore e andava in errore. Questo sketch ci è tornato utile per trovare l'indirizzo effettivo del dispositivo e risolvere così l'errore utile ad eseguire il laboratorio 1.6.

@@ -1,4 +1,4 @@
-//Software non ottimale dal punto di vista energetico, ma essendo necessario l'ascolto continuo dal microfono e' pressoche' inutile cercare di ottimizzare ulteriormente i consumi
+//Software non ottimale dal punto di vista energetico, in quanto l'arduino non viene mai messo in stato di bassa potenza, tuttavia essendo necessario l'ascolto continuo dal microfono e' pressoche' inutile cercare di ottimizzare ulteriormente i consumi
 
 #include <Arduino.h>
 #include <Wire.h>
@@ -20,10 +20,12 @@ const int MAX_SPEED = 255;//massimo valore PWM
 byte dutyCycle = 0;
 
 //LED var and const 
-const int RLED_PIN = A1;
+const int RLED_PIN = 2;
+const int BLED_PIN = 3;
+byte bled_status = LOW;
 const byte MIN_BRIGHTNESS = 0;
 const byte MAX_BRIGHTNESS = 255;
-byte brightness;
+byte brightness = 0;
 
 //PIR var and const
 const int PIR_PIN = 4;
@@ -33,22 +35,34 @@ unsigned long int last_PIR_presence = 0; //millis() del momento in cui e' stata 
 //Microphone var and const
 const unsigned int SAMPLE_FREQ = 16000; //campionamento a 16 kHz
 const unsigned short N_CHANNELS = 1; //canale mono
+short sampleBuffer[256]; //buffer per i dati PDM provenienti adl microfono
+unsigned int sound_threshold = 2000; //ampiezza del valore campionato che aziona la presenza
+volatile int samplesRead = 0; //byte letti PDM
+volatile unsigned long int last_mic_presence = 0; //millis() del momento in cui e' stata rilevata l'ultima presenza mic
+unsigned int timeout_mic = 10; //riferito a minuti
+/*
 const unsigned int NOISE_TIMEOUT = 25; //secondi
 const unsigned int SOUND_REFRESH = 500; //ms
-unsigned int sound_threshold = 500; //ampiezza del valore campionato che aziona la presenza
 volatile int n_sound_events = 0; //numero di eventi che appurano la presenza, si parte con 0
-unsigned int timeout_mic = 10; //riferito a minuti
-volatile unsigned long int last_mic_presence = 0; //millis() del momento in cui e' stata rilevata l'ultima presenza mic
 unsigned long int last_over_threshold;
 const unsigned int PRESENCE_THRESHOLD = 10; //soglia oltre la quale viene appurata la presenza
-short sampleBuffer[256]; //buffer per i dati PDM provenienti adl microfono
-volatile int samplesRead = 0; //byte letti PDM
+*/
+const int CLAP_DURATION = 200;
+const int CLAP_MAX_BREAK = 800;
+const int THIRD_CLAP_FILTER = 1000;
+int lastSoundValue;
+int soundValue;
+long lastNoiseTime = 0;
+long currentNoiseTime = 0;
+long lastLightChange = 0;
 
 //LCD const and var
 const int ADDRESS_I2C = 0xA0; //indirizzo i2c dello schermo LCD
 LiquidCrystal_PCF8574 lcd(ADDRESS_I2C);
 short LCD_ready = -1; //indica se lo schermo LCD e' stato avviato correttamente
 const int LCD_DELAY = 4000; //indica la frequenza di aggiornamento del display LCD
+
+//caratteri personalizzati utilizzati nel display LCD
 byte ecoChar[8] = {
 	0b00100,
 	0b01010,
@@ -83,15 +97,13 @@ volatile byte system_status = 1; //indica se i sistemi di riscaldamento e raffre
 //funzione per la lettura della temperatura dal sensore, restituisce in float i gradi centigradi
 float readTemp(){
   int rawRead;
-  float temp, R;
+  float R;
   rawRead = analogRead(TEMPSENSOR_PIN);
     
   R = (1023.0/rawRead)-1.0;
   R = R0*R;
 
-  temp = 1.0/((log(R/R0)/B)+(1/(KELVIN+T0)))-KELVIN;
-  
-  return temp;
+  return 1.0/((log(R/R0)/B)+(1/(KELVIN+T0)))-KELVIN;
 }
 
 //funzione che verifica a partire dal parametro passato sottoforma di stringa se si tratta di un float
@@ -193,7 +205,7 @@ void checkInput(){
       }else{
         Serial.println("Valore inserito troppo basso, riprova.");
       }
-    }
+    }/*
     else if(letter.substring(0, 12).equals("TIMEOUT_MIC:") && isFloat(letter.substring(12))){
       check = letter.substring(12).toInt();
       if(check >= 2*NOISE_TIMEOUT/60){
@@ -204,7 +216,7 @@ void checkInput(){
       }else{
         Serial.println("Valore inserito troppo basso. Riprova.");
       }
-    }
+    }*/
     else if(letter.substring(0, 9).equals("HC_DELTA:") && isFloat(letter.substring(9))){
       heating_cooling_delta = abs(letter.substring(9).toFloat());
       Serial.print("Delta temperatura risparmio energetico in modalità assenza impostata a: ");
@@ -245,9 +257,11 @@ void PIRpresenceDetected(){
   last_PIR_presence = millis();
 }
 
+/*
 void MICpresenceDetected(){
   last_mic_presence = millis();
 }
+*/
 
 //attraverso i vari timeout del mic e del PIR aggiorna costantemente la variabile presence per determinare se è presente qualcuno in casa
 void checkPresence(){
@@ -297,6 +311,7 @@ void onPDMdata(){
   samplesRead = PDM.read(sampleBuffer, bytesAvailable) / 2;
 }
 
+/*
 //controlla i dati provenienti dal microfono per verificare se vi è una presenza all'interno della casa
 void checkSound(){
   if(samplesRead != 0){
@@ -318,6 +333,35 @@ void checkSound(){
   }
   yield();
   delay(SOUND_REFRESH);
+}
+*/
+
+void doubleClapDetector(){
+  soundValue = 0; //se il ciclo successivo non cambia la variabile si suppone uguale a 0
+  if(samplesRead != 0){
+    for(int i=0; i < samplesRead; i++){
+      if(abs(sampleBuffer[i]) > sound_threshold){
+        soundValue = 1;
+        break; //interrompe il ciclo sull'array in quanto un valore oltre la soglia è già stato trovato
+      }
+    }
+  }
+  currentNoiseTime = millis();
+  if(soundValue == 1){
+    if(
+      (currentNoiseTime > lastNoiseTime + CLAP_DURATION) && // Verifica che il rumore sia piu' lungo di CLAP_DURATION ms
+      (lastSoundValue == 0) &&  // verifica il silenzio tra un clap e il successivo oltre
+      (currentNoiseTime < lastNoiseTime + CLAP_MAX_BREAK) && // Verifica che il clap successivo sia entro CLAP_MAX_DURATION ms
+      (currentNoiseTime > lastLightChange + THIRD_CLAP_FILTER) // Filtra di THIRD_CLAP_FILTER ms affinchè non venga riconosciuto un terzo clap
+    ){
+      bled_status = !bled_status;   // Modifica lo stato del LED
+      digitalWrite(BLED_PIN, bled_status);
+      lastLightChange = currentNoiseTime;
+    }
+    lastNoiseTime = currentNoiseTime;
+  }
+  lastSoundValue = soundValue;
+  yield();
 }
 
 //stampa del menu iniziale sul seriale
@@ -367,6 +411,12 @@ void printLCD(){
 void setup() {
   pinMode(FAN_PIN, OUTPUT);
   analogWrite(FAN_PIN, dutyCycle);
+
+  pinMode(BLED_PIN, OUTPUT);
+  digitalWrite(BLED_PIN, bled_status);
+
+  pinMode(RLED_PIN, OUTPUT);
+  analogWrite(RLED_PIN, brightness);
   
   Serial.begin(9600);
   while(!Serial);
@@ -401,7 +451,8 @@ void setup() {
   Scheduler.startLoop(checkInput);
   Scheduler.startLoop(checkPresence);
   Scheduler.startLoop(printLCD);
-  Scheduler.startLoop(checkSound);
+  //Scheduler.startLoop(checkSound);
+  Scheduler.startLoop(doubleClapDetector);
   attachInterrupt(digitalPinToInterrupt(PIR_PIN), PIRpresenceDetected, RISING);
   PDM.onReceive(onPDMdata);
 }
