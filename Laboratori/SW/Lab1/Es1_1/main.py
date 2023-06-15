@@ -6,8 +6,11 @@ class TempConverter(object) :
         dataDict = dict()
         if len(uri) != 0 and uri[0] == 'converter' :
             if params != {} and len(params) == 3 :
-                dataDict["originalValue"] = params["value"]
-                dataDict["originalUnit"] = params["originalUnit"].upper()
+                try:
+                    dataDict["originalValue"] = params["value"]
+                    dataDict["originalUnit"] = params["originalUnit"]
+                except KeyError:
+                    raise cherrypy.HTTPError(400, "Bad Request :(")
                 if params["originalUnit"].upper() == 'C' and params["targetUnit"].upper() == 'K' :
                     dataDict["targetValue"] = self.celsiusToKelvin(float(params["value"]))
                 if params["originalUnit"].upper() == 'C' and params["targetUnit"].upper() == 'F' :
@@ -27,11 +30,9 @@ class TempConverter(object) :
                     json_data = json.load(f)
                     return json.dumps(json_data, indent=2)
             else :
-                raise cherrypy.HTTPError(400, "Bad Request :(")
+                raise cherrypy.HTTPError(400)
         else :
             raise cherrypy.HTTPError(404, "Not Found :(")
-
-    def POST(self,*uri,**params ):
 
     def celsiusToKelvin(self, temp):
         return temp + 273.15
@@ -54,6 +55,7 @@ class TempConverter(object) :
 if __name__ == '__main__':
     conf={
         '/':{
+                'request.show_tracebacks':False,
                 'request.dispatch':cherrypy.dispatch.MethodDispatcher(),
                 'tool.session.on':True
             }}

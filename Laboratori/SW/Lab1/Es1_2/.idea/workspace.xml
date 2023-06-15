@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="8bffb0a1-1f2a-463b-80a4-235b6949b904" name="Changes" comment="">
+      <change afterPath="$PROJECT_DIR$/../Es1_1/.idea/.gitignore" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Es1_1/.idea/Es1_1.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Es1_1/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Es1_1/.idea/inspectionProfiles/profiles_settings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Es1_1/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Es1_1/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Es1_1/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../Es1_1/data.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Esercitazioni/Es2/Es2_4/.idea/Es2_4.iml" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Esercitazioni/Es2/Es2_4/.idea/Es2_4.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Esercitazioni/Es2/Es2_4/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Esercitazioni/Es2/Es2_4/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../../../Esercitazioni/Es2/Es2_4/main.py" beforeDir="false" afterPath="$PROJECT_DIR$/../../../../Esercitazioni/Es2/Es2_4/main.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Es1_LAB.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Es2_LAB.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Es3_LAB.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../data.json" beforeDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../../.." />
+  </component>
+  <component name="ProjectId" id="2RF2A052ZAwZMaehLqSpuX4PQUF" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent"><![CDATA[{
+  "keyToString": {
+    "RunOnceActivity.ShowReadmeOnStart": "true",
+    "git-widget-placeholder": "main",
+    "last_opened_file_path": "/Users/fabiobiscia/Documents/GitHub/Tecnologie_IoT/Laboratori/SW/Lab1/Es1_2"
+  }
+}]]></component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="8bffb0a1-1f2a-463b-80a4-235b6949b904" name="Changes" comment="" />
+      <created>1686831360885</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1686831360885</updated>
+    </task>
+    <servers />
+  </component>
+</project>
