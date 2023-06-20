@@ -11,7 +11,7 @@ def inputMenu():
         print(command_list)
         user_input = input()
         if user_input == "1":
-            print(client_catalog.get_messageBrokerIP() + "\nPort: 5000\n")
+            print(client_catalog.get_messageBrokerIP() + "\nPort: " + client_catalog.get_messageBrokerPort() + "\n")
         elif user_input == "2":
             client_catalog.GET("devices")
         elif user_input == "2":
