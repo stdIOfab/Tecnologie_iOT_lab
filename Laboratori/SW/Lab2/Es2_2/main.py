@@ -69,7 +69,6 @@ class CatalogREST:
         self._registry['services'] = dict()
         # self.messageBroker = 'iot.eclipse.org'
         self.messageBroker =broker
-        print(self._registry)
 
     def start(self):
         #manage connection to broker
@@ -101,17 +100,16 @@ class CatalogREST:
             self._paho_mqtt.unsubscribe(self._topic)
             self._paho_mqtt.subscribe(self._baseTopic+"/"+"devices/#", 2)
             self._paho_mqtt.publish(self._baseTopic+"/"+"devices", json.dumps(self._registry['devices']), 2)
-            print(self._registry['devices'])
             return json.dumps(self._registry['devices'])
         elif len(uri) == 1 and uri[0] == 'users' :   # all users
             self._paho_mqtt.unsubscribe(self._topic)
             self._paho_mqtt.subscribe(self._baseTopic+"/"+"users/#", 2)
-            self._paho_mqtt.publish(self._baseTopic+"users/#", json.dumps(self._registry['users']), 2)
+            self._paho_mqtt.publish(self._baseTopic+"users", json.dumps(self._registry['users']), 2)
             return json.dumps(self._registry['users'])
         elif len(uri) == 1 and uri[0] == 'services' :   # all services
             self._paho_mqtt.unsubscribe(self._topic)
             self._paho_mqtt.subscribe(self._baseTopic+"/"+"services/#", 2)
-            self._paho_mqtt.publish(self._baseTopic+"services/#", json.dumps(self._registry['services']), 2)
+            self._paho_mqtt.publish(self._baseTopic+"services", json.dumps(self._registry['services']), 2)
             return json.dumps(self._registry['services'])
         elif len(uri) == 2 and uri[0] == 'devices' :   # specific device
             self._paho_mqtt.unsubscribe(self._topic)
