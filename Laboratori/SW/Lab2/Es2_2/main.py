@@ -4,7 +4,39 @@ import time
 import json
 import cherrypy
 import schedule
+from threading import Thread
 
+def inputMenu():
+    while True:
+        print(command_list)
+        user_input = input()
+        if user_input == "1":
+            print(client_catalog.messageBroker + "\nPort: 5000\n")
+        elif user_input == "2":
+            client_catalog.GET("devices")
+        elif user_input == "2":
+            print('Type the deviceID: ')
+            id = str(input())
+            client_catalog.GET("devices", id)
+        elif user_input == "4":
+            client_catalog.GET("users")
+        elif user_input == "5":
+            print('Type the userID: ')
+            id = str(input())
+            client_catalog.GET("users", id)
+        elif user_input == 'q':
+            client_catalog.stop()
+            cherrypy.engine.exit()
+            exit(0)
+        else:
+            print('Unknown command')
+
+
+def loopCheck():
+    schedule.every(10).seconds.do(client_catalog.removeOld)
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
 class CatalogREST:
     exposed = True
 
@@ -37,6 +69,7 @@ class CatalogREST:
         self._registry['services'] = dict()
         # self.messageBroker = 'iot.eclipse.org'
         self.messageBroker =broker
+        print(self._registry)
 
     def start(self):
         #manage connection to broker
@@ -48,12 +81,12 @@ class CatalogREST:
         self._paho_mqtt.disconnect()
 
     def publish(self, topic, msg):
-        print("publishing to %s" % (topic))
+        print("publishing to %s" % topic)
         self._paho_mqtt.publish(topic, msg, 2)
 
     def subscribe(self, topic):
         # if needed, you can do some computation or error-check before subscribing
-        print("subscribing to %s" % (topic))
+        print("subscribing to %s" % topic)
         self._paho_mqtt.subscribe(topic, 2)
         self._isSubscriber = True
         self._topic = topic
@@ -68,7 +101,7 @@ class CatalogREST:
             self._paho_mqtt.unsubscribe(self._topic)
             self._paho_mqtt.subscribe(self._baseTopic+"/"+"devices/#", 2)
             self._paho_mqtt.publish(self._baseTopic+"/"+"devices", json.dumps(self._registry['devices']), 2)
-            print(self._registry)
+            print(self._registry['devices'])
             return json.dumps(self._registry['devices'])
         elif len(uri) == 1 and uri[0] == 'users' :   # all users
             self._paho_mqtt.unsubscribe(self._topic)
@@ -98,19 +131,37 @@ class CatalogREST:
 
 
     def POST(self, *uri):
-        self._req = cherrypy.request.body.read()
+        req = cherrypy.request.body.read()
         if len(uri) == 2 and uri[0] == 'devices' and uri[1] == 'subscription' :
-            deviceData = json.loads(self._req)
+            deviceData = json.loads(req)
             if deviceData["deviceID"] not in self._registry['devices'] :
                 self.register_device(deviceData)
         if len(uri) == 2 and uri[0] == 'users' and uri[1] == 'subscription' :
-            userData = json.loads(self._req)
+            userData = json.loads(req)
             if userData["userID"] not in self._registry['users'] :
                 self.register_user(userData)
         if len(uri) == 2 and uri[0] == 'services' and uri[1] == 'subscription' :
-            serviceData = json.loads(self._req)
+            serviceData = json.loads(req)
             if serviceData["serviceID"] not in self._registry['services'] :
                 self.register_service(serviceData)
+
+    def removeOld(self):
+        t = time.time()
+        print(self._registry['devices'])
+        cancel_list = []
+        for dev in self._registry['devices']:
+            if t - float(self._registry['devices'][dev]['timestamp']) > 20:
+                cancel_list.append(dev)
+        for dev in cancel_list:
+            self._registry['devices'].pop(dev)
+
+        cancel_list.clear()
+
+        for ser in self._registry['services']:
+            if t - float(self._registry['services'][ser]['timestamp']) > 20:
+                cancel_list.append(ser)
+        for ser in cancel_list:
+            self._registry['services'].pop(ser)
 
     def register_device(self, deviceJson):
         deviceJson['timestamp'] = str(round(time.time(), 2))
@@ -122,28 +173,14 @@ class CatalogREST:
     def register_user(self, userJson):
         self._registry['users']['usr'+userJson['userID']] = dict()
         self._registry['users']['usr'+userJson['userID']]['name'] = userJson['name']
-        self._registry['users']['usr'+userJson['userID']]['surname'] = userJson['surnname']
-        self._registry['users']['usr'+userJson['userID']]['emailAddresses'] = userJson['emailAdresses']
+        self._registry['users']['usr'+userJson['userID']]['surname'] = userJson['surname']
+        self._registry['users']['usr'+userJson['userID']]['emailAddresses'] = userJson['emailAddresses']
 
     def register_service(self, serviceJson):
         serviceJson['timestamp'] = str(time.time())
         self._registry['services']['ser'+serviceJson['serviceID']]['description'] = serviceJson['description']
         self._registry['services']['ser'+serviceJson['serviceID']]['endpoints'] = serviceJson['endpoints']
         self._registry['services']['ser'+serviceJson['serviceID']]['timestamp'] = serviceJson['timestamp']
-
-    def removeOld(self):
-        t = time.time()
-        print(self._registry)
-        for dev in self._registry['devices']:
-            if t - float(self._registry['devices'][dev]['timestamp']) > 10:
-                self._registry['devices'].pop(dev)
-        for ser in self._registry['services']:
-            if t - float(self._registry['services'][ser]['timestamp']) > 120:
-                self._registry['devices'].pop(ser)
-
-
-def scheduler(object) :
-    object.removeOld()
 
 
 if __name__ == "__main__":
@@ -154,42 +191,16 @@ if __name__ == "__main__":
             'tools.staticdir.root': os.path.abspath(os.getcwd())
 
         }}
-    cherrypy.tree.mount(CatalogREST("CatalogClient", '127.0.0.1'), '/', conf)
+    client_catalog = CatalogREST("CatalogClient", '127.0.0.1')
+    cherrypy.tree.mount(client_catalog, '/', conf)
     cherrypy.engine.start()
 
-    client_catalog = CatalogREST("CatalogClient", '127.0.0.1')
     client_catalog.start()
     print('Welcome!\n')
 
     command_list = 'Type:\n"1" to retrieve info about registering and MQTT broker\n"2" to retrieve all registered devices\n' \
                    '"3" to retrieve a device with a specific deviceID\n"4" to retrieve all registered users\n"5" to retrieve a user with a specific userID\n' \
                    '"q" to quit'
-    schedule.every(10).seconds.do(scheduler, client_catalog)
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
-        #print(command_list)
-        #user_input = input()
-        #if user_input == "1":
-        #    print(client_catalog.messageBroker + "\nPort: 5000\n")
-        #elif user_input == "2":
-        #    client_catalog.GET("devices")
-        #elif user_input == "2":
-        #    print('Type the deviceID: ')
-        #    id = str(input())
-        #    client_catalog.GET("devices", id)
-        #elif user_input == "4":
-        #    client_catalog.GET("users")
-        #elif user_input == "5":
-        #    print('Type the userID: ')
-        #    id = str(input())
-        #    client_catalog.GET("users", id)
-        #elif user_input == 'q':
-        #    client_catalog.stop()
-        #    cherrypy.engine.exit()
-        #    exit(0)
-        #else:
-        #    print('Unknown command')
-#
-#
 
+    Thread(target=inputMenu).start()
+    Thread(target=loopCheck).start()
