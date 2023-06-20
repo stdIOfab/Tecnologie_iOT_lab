@@ -11,19 +11,19 @@ def inputMenu():
         print(command_list)
         user_input = input()
         if user_input == "1":
-            print(client_catalog.messageBroker + "\nPort: 5000\n")
+            print(client_catalog.get_messageBrokerIP() + "\nPort: 5000\n")
         elif user_input == "2":
             client_catalog.GET("devices")
         elif user_input == "2":
             print('Type the deviceID: ')
-            id = str(input())
-            client_catalog.GET("devices", id)
+            devID = str(input())
+            client_catalog.GET("devices", devID)
         elif user_input == "4":
             client_catalog.GET("users")
         elif user_input == "5":
             print('Type the userID: ')
-            id = str(input())
-            client_catalog.GET("users", id)
+            devID = str(input())
+            client_catalog.GET("users", devID)
         elif user_input == 'q':
             client_catalog.stop()
             cherrypy.engine.exit()
@@ -40,10 +40,12 @@ def loopCheck():
 class CatalogREST:
     exposed = True
 
-    def __init__(self, clientID, broker):
+    def __init__(self, clientID, broker, port):
         self.clientID = clientID
+        self._messageBrokerPort = port
         self._baseTopic = 'catalog'
         self._topic = self._baseTopic
+        self._messageBrokerIP = broker
         # create an instance of paho.mqtt.client
         self._paho_mqtt = PahoMQTT.Client(self.clientID, False)
         # register the callback
@@ -59,8 +61,8 @@ class CatalogREST:
         # subscription MQTT
         self._infoSub["subscription"]["MQTT"] = dict()
         self._infoSub["subscription"]["MQTT"]["device"] = dict()
-        self._infoSub["subscription"]["MQTT"]["device"]["hostname"] = broker
-        self._infoSub["subscription"]["MQTT"]["device"]["port"] = "5000"
+        self._infoSub["subscription"]["MQTT"]["device"]["hostname"] = self._messageBrokerIP
+        self._infoSub["subscription"]["MQTT"]["device"]["port"] = str(self._messageBrokerPort)
         self._infoSub["subscription"]["MQTT"]["device"]["topic"] = "tiot/2/catalog/devices/subscription"
         # catalog
         self._registry = dict()
@@ -68,11 +70,17 @@ class CatalogREST:
         self._registry['users'] = dict()
         self._registry['services'] = dict()
         # self.messageBroker = 'iot.eclipse.org'
-        self.messageBroker =broker
+
+    def get_messageBrokerIP(self):
+        return self._messageBrokerIP
+
+    def get_messageBrokerPort(self):
+        return self._messageBrokerPort
+
 
     def start(self):
         #manage connection to broker
-        self._paho_mqtt.connect(self.messageBroker, 5000)
+        self._paho_mqtt.connect(self._messageBrokerIP, self._messageBrokerPort)
         self._paho_mqtt.loop_start()
 
     def stop(self):
@@ -91,7 +99,7 @@ class CatalogREST:
         self._topic = topic
 
     def myOnConnect (self, paho_mqtt, userdata, flags, rc):
-        print ("Connected to %s with result code: %d" % (self.messageBroker, rc))
+        print ("Connected to %s with result code: %d" % (self._messageBrokerIP, rc))
 
     def GET(self,*uri,**params):
         if len(uri) == 0 :
@@ -189,7 +197,7 @@ if __name__ == "__main__":
             'tools.staticdir.root': os.path.abspath(os.getcwd())
 
         }}
-    client_catalog = CatalogREST("CatalogClient", '127.0.0.1')
+    client_catalog = CatalogREST("CatalogClient", '127.0.0.1', 5000)
     cherrypy.tree.mount(client_catalog, '/', conf)
     cherrypy.engine.start()
 
