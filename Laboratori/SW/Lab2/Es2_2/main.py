@@ -39,24 +39,12 @@ class CatalogREST:
         self.messageBroker =broker
 
     def start(self):
-        #manage connection to broker
         self._paho_mqtt.connect(self.messageBroker, 5000)
         self._paho_mqtt.loop_start()
 
     def stop(self):
         self._paho_mqtt.loop_stop()
         self._paho_mqtt.disconnect()
-
-    def publish(self, topic, msg):
-        print("publishing to %s" % (topic))
-        self._paho_mqtt.publish(topic, msg, 2)
-
-    def subscribe(self, topic):
-        # if needed, you can do some computation or error-check before subscribing
-        print("subscribing to %s" % (topic))
-        self._paho_mqtt.subscribe(topic, 2)
-        self._isSubscriber = True
-        self._topic = topic
 
     def myOnConnect (self, paho_mqtt, userdata, flags, rc):
         print ("Connected to %s with result code: %d" % (self.messageBroker, rc))
@@ -68,17 +56,16 @@ class CatalogREST:
             self._paho_mqtt.unsubscribe(self._topic)
             self._paho_mqtt.subscribe(self._baseTopic+"/"+"devices/#", 2)
             self._paho_mqtt.publish(self._baseTopic+"/"+"devices", json.dumps(self._registry['devices']), 2)
-            print(self._registry)
             return json.dumps(self._registry['devices'])
         elif len(uri) == 1 and uri[0] == 'users' :   # all users
             self._paho_mqtt.unsubscribe(self._topic)
             self._paho_mqtt.subscribe(self._baseTopic+"/"+"users/#", 2)
-            self._paho_mqtt.publish(self._baseTopic+"users/#", json.dumps(self._registry['users']), 2)
+            self._paho_mqtt.publish(self._baseTopic+"users", json.dumps(self._registry['users']), 2)
             return json.dumps(self._registry['users'])
         elif len(uri) == 1 and uri[0] == 'services' :   # all services
             self._paho_mqtt.unsubscribe(self._topic)
             self._paho_mqtt.subscribe(self._baseTopic+"/"+"services/#", 2)
-            self._paho_mqtt.publish(self._baseTopic+"services/#", json.dumps(self._registry['services']), 2)
+            self._paho_mqtt.publish(self._baseTopic+"services", json.dumps(self._registry['services']), 2)
             return json.dumps(self._registry['services'])
         elif len(uri) == 2 and uri[0] == 'devices' :   # specific device
             self._paho_mqtt.unsubscribe(self._topic)
@@ -133,7 +120,6 @@ class CatalogREST:
 
     def removeOld(self):
         t = time.time()
-        print(self._registry)
         for dev in self._registry['devices']:
             if t - float(self._registry['devices'][dev]['timestamp']) > 10:
                 self._registry['devices'].pop(dev)
@@ -152,12 +138,11 @@ if __name__ == "__main__":
             'request.dispatch': cherrypy.dispatch.MethodDispatcher(),
             'tool.session.on': True,
             'tools.staticdir.root': os.path.abspath(os.getcwd())
-
         }}
-    cherrypy.tree.mount(CatalogREST("CatalogClient", '127.0.0.1'), '/', conf)
+    client_catalog = CatalogREST("CatalogClient", '127.0.0.1')
+    cherrypy.tree.mount(client_catalog, '/', conf)
     cherrypy.engine.start()
 
-    client_catalog = CatalogREST("CatalogClient", '127.0.0.1')
     client_catalog.start()
     print('Welcome!\n')
 
@@ -168,28 +153,27 @@ if __name__ == "__main__":
     while True:
         schedule.run_pending()
         time.sleep(1)
-        #print(command_list)
-        #user_input = input()
-        #if user_input == "1":
-        #    print(client_catalog.messageBroker + "\nPort: 5000\n")
-        #elif user_input == "2":
-        #    client_catalog.GET("devices")
-        #elif user_input == "2":
-        #    print('Type the deviceID: ')
-        #    id = str(input())
-        #    client_catalog.GET("devices", id)
-        #elif user_input == "4":
-        #    client_catalog.GET("users")
-        #elif user_input == "5":
-        #    print('Type the userID: ')
-        #    id = str(input())
-        #    client_catalog.GET("users", id)
-        #elif user_input == 'q':
-        #    client_catalog.stop()
-        #    cherrypy.engine.exit()
-        #    exit(0)
-        #else:
-        #    print('Unknown command')
-#
-#
+        print(command_list)
+        user_input = input()
+        if user_input == "1":
+            print('Broker: ' + client_catalog.messageBroker + "\nPort: 5000\n")
+        elif user_input == "2":
+            print(client_catalog.GET("devices"))
+        elif user_input == "3":
+            print('Type the deviceID: ')
+            id = str(input())
+            print(client_catalog.GET("devices", id))
+        elif user_input == "4":
+            print(client_catalog.GET("users"))
+        elif user_input == "5":
+            print('Type the userID: ')
+            id = str(input())
+            print(client_catalog.GET("users", id))
+        elif user_input == 'q':
+            client_catalog.stop()
+            cherrypy.engine.exit()
+            exit(0)
+        else:
+            print('Unknown command')
+
 
