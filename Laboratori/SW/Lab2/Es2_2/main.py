@@ -3,6 +3,7 @@ import paho.mqtt.client as PahoMQTT
 import time
 import json
 import cherrypy
+import schedule
 
 class CatalogREST:
     exposed = True
@@ -15,6 +16,21 @@ class CatalogREST:
         self._paho_mqtt = PahoMQTT.Client(self.clientID, False)
         # register the callback
         self._paho_mqtt.on_connect = self.myOnConnect
+        # info about registration
+        self._infoSub = dict()
+        self._infoSub["subscription"] = dict()
+        # subscription REST
+        self._infoSub["subscription"]["REST"] = dict()
+        self._infoSub["subscription"]["REST"]["device"] = broker+"/devices/subscription"
+        self._infoSub["subscription"]["REST"]["service"] = broker+"/services/subscription"
+        self._infoSub["subscription"]["REST"]["user"] = broker+"/users/subscription"
+        # subscription MQTT
+        self._infoSub["subscription"]["MQTT"] = dict()
+        self._infoSub["subscription"]["MQTT"]["device"] = dict()
+        self._infoSub["subscription"]["MQTT"]["device"]["hostname"] = broker
+        self._infoSub["subscription"]["MQTT"]["device"]["port"] = "5000"
+        self._infoSub["subscription"]["MQTT"]["device"]["topic"] = "tiot/2/catalog/devices/subscription"
+        # catalog
         self._registry = dict()
         self._registry['devices'] = dict()
         self._registry['users'] = dict()
@@ -47,11 +63,12 @@ class CatalogREST:
 
     def GET(self,*uri,**params):
         if len(uri) == 0 :
-            return 'REST APIs or MQTT info for subscribing'
+            return json.dumps(self._infoSub)
         elif len(uri) == 1 and uri[0] == 'devices' :   # all devices
             self._paho_mqtt.unsubscribe(self._topic)
             self._paho_mqtt.subscribe(self._baseTopic+"/"+"devices/#", 2)
             self._paho_mqtt.publish(self._baseTopic+"/"+"devices", json.dumps(self._registry['devices']), 2)
+            print(self._registry)
             return json.dumps(self._registry['devices'])
         elif len(uri) == 1 and uri[0] == 'users' :   # all users
             self._paho_mqtt.unsubscribe(self._topic)
@@ -66,42 +83,67 @@ class CatalogREST:
         elif len(uri) == 2 and uri[0] == 'devices' :   # specific device
             self._paho_mqtt.unsubscribe(self._topic)
             self._paho_mqtt.subscribe(self._baseTopic+"/"+"devices/"+uri[1], 2)
-            self._paho_mqtt.publish(self._baseTopic+"devices/"+uri[1], json.dumps(self._registry['devices'][uri[1]]), 2)
-            return 'Device {} : {}'.format(uri[1], self._registry['devices'][uri[1]])
+            self._paho_mqtt.publish(self._baseTopic+"devices/"+uri[1], json.dumps(self._registry['devices']['dev'+uri[1]]), 2)
+            return 'Device {} : {}'.format(uri[1], self._registry['devices']['dev'+uri[1]])
         elif len(uri) == 2 and uri[0] == 'user' :   # specific user
             self._paho_mqtt.unsubscribe(self._topic)
             self._paho_mqtt.subscribe(self._baseTopic+"/"+"users/" + uri[1], 2)
-            self._paho_mqtt.publish(self._baseTopic+"users/" + uri[1], json.dumps(self._registry['users'][uri[1]]), 2)
-            return 'User {} : {}'.format(uri[1], self._registry['users'][uri[1]])
+            self._paho_mqtt.publish(self._baseTopic+"users/" + uri[1], json.dumps(self._registry['users']['usr'+uri[1]]), 2)
+            return 'User {} : {}'.format(uri[1], self._registry['users']['usr'+uri[1]])
         elif len(uri) == 2 and uri[0] == 'service' :   # specific service
             self._paho_mqtt.unsubscribe(self._topic)
             self._paho_mqtt.subscribe(self._baseTopic+"/"+"services/" + uri[1], 2)
-            self._paho_mqtt.publish(self._baseTopic+"services/" + uri[1], json.dumps(self._registry['services'][uri[1]]), 2)
-            return 'Service {} : {}'.format(uri[1], self._registry['services'][uri[1]])
+            self._paho_mqtt.publish(self._baseTopic+"services/" + uri[1], json.dumps(self._registry['services']['ser'+uri[1]]), 2)
+            return 'Service {} : {}'.format(uri[1], self._registry['services']['ser'+uri[1]])
 
 
     def POST(self, *uri):
         self._req = cherrypy.request.body.read()
         if len(uri) == 2 and uri[0] == 'devices' and uri[1] == 'subscription' :
             deviceData = json.loads(self._req)
-            self.register_device(deviceData)
+            if deviceData["deviceID"] not in self._registry['devices'] :
+                self.register_device(deviceData)
         if len(uri) == 2 and uri[0] == 'users' and uri[1] == 'subscription' :
             userData = json.loads(self._req)
-            self.register_user(userData)
+            if userData["userID"] not in self._registry['users'] :
+                self.register_user(userData)
         if len(uri) == 2 and uri[0] == 'services' and uri[1] == 'subscription' :
             serviceData = json.loads(self._req)
-            self.register_service(serviceData)
+            if serviceData["serviceID"] not in self._registry['services'] :
+                self.register_service(serviceData)
 
     def register_device(self, deviceJson):
         deviceJson['timestamp'] = str(round(time.time(), 2))
-        self._registry['devices'][deviceJson['deviceID']] = (deviceJson['endpoints'], deviceJson['availableRes'], deviceJson['timestamp'])
+        self._registry['devices']['dev'+deviceJson['deviceID']] = dict()
+        self._registry['devices']['dev'+deviceJson['deviceID']]['endpoints'] = deviceJson['endpoints']
+        self._registry['devices']['dev'+deviceJson['deviceID']]['availableRes'] = deviceJson['availableRes']
+        self._registry['devices']['dev'+deviceJson['deviceID']]['timestamp'] = deviceJson['timestamp']
 
     def register_user(self, userJson):
-        self._registry['users'][userJson['userID']] = (userJson['name'], userJson['surname'], userJson['emailAddresses'])
+        self._registry['users']['usr'+userJson['userID']] = dict()
+        self._registry['users']['usr'+userJson['userID']]['name'] = userJson['name']
+        self._registry['users']['usr'+userJson['userID']]['surname'] = userJson['surnname']
+        self._registry['users']['usr'+userJson['userID']]['emailAddresses'] = userJson['emailAdresses']
 
     def register_service(self, serviceJson):
         serviceJson['timestamp'] = str(time.time())
-        self._registry['users'][serviceJson['serviceID']] = (serviceJson['description'], serviceJson['endpoints'], serviceJson['timestamp'])
+        self._registry['services']['ser'+serviceJson['serviceID']]['description'] = serviceJson['description']
+        self._registry['services']['ser'+serviceJson['serviceID']]['endpoints'] = serviceJson['endpoints']
+        self._registry['services']['ser'+serviceJson['serviceID']]['timestamp'] = serviceJson['timestamp']
+
+    def removeOld(self):
+        t = time.time()
+        print(self._registry)
+        for dev in self._registry['devices']:
+            if t - float(self._registry['devices'][dev]['timestamp']) > 10:
+                self._registry['devices'].pop(dev)
+        for ser in self._registry['services']:
+            if t - float(self._registry['services'][ser]['timestamp']) > 120:
+                self._registry['devices'].pop(ser)
+
+
+def scheduler(object) :
+    object.removeOld()
 
 
 if __name__ == "__main__":
@@ -118,30 +160,36 @@ if __name__ == "__main__":
     client_catalog = CatalogREST("CatalogClient", '127.0.0.1')
     client_catalog.start()
     print('Welcome!\n')
-    finish = False
+
     command_list = 'Type:\n"1" to retrieve info about registering and MQTT broker\n"2" to retrieve all registered devices\n' \
                    '"3" to retrieve a device with a specific deviceID\n"4" to retrieve all registered users\n"5" to retrieve a user with a specific userID\n' \
                    '"q" to quit'
-    while not finish:
-        print(command_list)
-        user_input = input()
-        if user_input == "1":
-            pass
-        elif user_input == "2":
-            client_catalog.GET("devices")
-        elif user_input == "2":
-            print('Type the deviceID: ')
-            id = str(input())
-            client_catalog.GET("devices", id)
-        elif user_input == "4":
-            client_catalog.GET("users")
-        elif user_input == "5":
-            print('Type the userID: ')
-            id = str(input())
-            client_catalog.GET("users", id)
-        elif user_input == 'q':
-            done = True
-        else:
-            print('Unknown command')
-    client_catalog.stop()
+    schedule.every(10).seconds.do(scheduler, client_catalog)
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
+        #print(command_list)
+        #user_input = input()
+        #if user_input == "1":
+        #    print(client_catalog.messageBroker + "\nPort: 5000\n")
+        #elif user_input == "2":
+        #    client_catalog.GET("devices")
+        #elif user_input == "2":
+        #    print('Type the deviceID: ')
+        #    id = str(input())
+        #    client_catalog.GET("devices", id)
+        #elif user_input == "4":
+        #    client_catalog.GET("users")
+        #elif user_input == "5":
+        #    print('Type the userID: ')
+        #    id = str(input())
+        #    client_catalog.GET("users", id)
+        #elif user_input == 'q':
+        #    client_catalog.stop()
+        #    cherrypy.engine.exit()
+        #    exit(0)
+        #else:
+        #    print('Unknown command')
+#
+#
 
