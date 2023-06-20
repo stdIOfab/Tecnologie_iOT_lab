@@ -117,32 +117,5 @@ if __name__ == "__main__":
 
     client_catalog = CatalogREST("CatalogClient", '127.0.0.1')
     client_catalog.start()
-
-    print('Welcome!\n')
-    finish = False
-    command_list = 'Type:\n"1" to retrieve info about registering and MQTT broker\n"2" to retrieve all registered devices\n' \
-                 '"3" to retrieve a device with a specific deviceID\n"4" to retrieve all registered users\n"5" to retrieve a user with a specific userID\n' \
-                   '"q" to quit'
-    while not finish:
-        print(command_list)
-        user_input = input()
-        if user_input == "1":
-            pass
-        elif user_input == "2":
-            client_catalog.GET("devices")
-        elif user_input == "2":
-            print('Type the deviceID: ')
-            id = str(input())
-            client_catalog.GET("devices", id)
-        elif user_input == "4":
-            client_catalog.GET("users")
-        elif user_input == "5":
-            print('Type the userID: ')
-            id = str(input())
-            client_catalog.GET("users", id)
-        elif user_input == 'q':
-            done=True
-        else:
-            print('Unknown command')
     client_catalog.stop()
 
