@@ -184,16 +184,16 @@ def loopCheck(classObject:CatalogREST, leasingTime=120):
         schedule.run_pending()
         time.sleep(1)
 
-class IoT_dev():
-    @staticmethod
-    def add_device():
-        dataDev = {"id": "1", "endpoint": ["endpoint1", "endpoint2"], "resource": "temperature"}
-        data_json = json.dumps(dataDev)
-        print(data_json)
+
+class IoT_dev:
+    def __init__(self):
+        self.dataDev = {"id": "1", "endpoint": ["endpoint1", "endpoint2"], "resource": "temperature"}
+
+    def add_device(self):
+        data_json = json.dumps(self.dataDev)
         r = requests.post(f'http://{client_catalog.get_currentHost()}:{client_catalog.get_hostPort()}/devices/subscription', data=data_json)
-        print(r.status_code)
         time.sleep(10)
-        IoT_dev.add_device()
+        IoT_dev.add_device(self)
 
 if __name__ == "__main__":
     conf = {
