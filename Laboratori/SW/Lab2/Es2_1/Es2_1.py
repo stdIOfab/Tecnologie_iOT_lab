@@ -106,6 +106,9 @@ class CatalogREST:
                    f'    "port":{self.messagebroker["port"]},' \
                    '    "topic":"/tiot/2/GET/devices/subscription"}}}'
 
+        if uri[0] == "messagebroker":
+            return json.dumps(self.messagebroker, indent=4)
+
         elif uri[0] == "devices":
             if len(uri) == 1:
                 return json.dumps({"devices": self.devices}, indent=4)
