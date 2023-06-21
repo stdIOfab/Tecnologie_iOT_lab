@@ -189,6 +189,7 @@ class IoT_dev():
     def add_device():
         dataDev = {"id": "1", "endpoint": ["endpoint1", "endpoint2"], "resource": "temperature"}
         data_json = json.dumps(dataDev)
+        print(data_json)
         r = requests.post(f'http://{client_catalog.get_currentHost()}:{client_catalog.get_hostPort()}/devices/subscription', data=data_json)
         print(r.status_code)
         time.sleep(10)
@@ -207,9 +208,9 @@ if __name__ == "__main__":
     cherrypy.config.update({'server.socket_host': HOST})
     cherrypy.config.update({'server.socket_port': HOST_PORT})
     cherrypy.engine.start()
-    loopCheck(client_catalog, 120)
     client_IoT = IoT_dev()
     client_IoT.add_device()
+    loopCheck(client_catalog, 120)
     cherrypy.engine.block()
 
 
