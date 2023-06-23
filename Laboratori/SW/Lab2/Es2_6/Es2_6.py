@@ -226,6 +226,25 @@ def loopCheck(classObject:ResourceCatalog, leasingTime=120):
         schedule.run_pending()
         time.sleep(1)
 
+class DevIoT_Publisher():
+
+    def __init__(self, broker, port, clientID, endpoint, resources):
+        self.broker = broker
+        self.port = port
+        self.clientID = clientID
+        self.endpoint = endpoint
+        self.resources = resources
+        self.myMqttClient = MyMQTT(self.clientID, self.broker, self.port, self)
+        self.myMqttClient.start()
+
+    def register_or_refersh(self):
+        dataDev = {"id": self.clientID, "endpoint": self.endpoint, "resource": self.resources}
+        while True:
+            t = time.time()
+            dataDev["timestamp"] = t
+            self.myMqttClient.myPublish("/tiot/2/catalog/subscription/devices/subscription/" + dataDev['id'] + '/response', json.dumps(dataDev))
+            time.sleep(60)
+
 
 if __name__ == "__main__":
     conf = {
@@ -236,11 +255,15 @@ if __name__ == "__main__":
         }
     }
     client_catalog = ResourceCatalog("mqtt.eclipse.org", 1883, HOST, HOST_PORT)
+    d = DevIoT_Publisher("test.mosquitto.org", 1883, "publisher_tiot_2", ["endpoint1", "endpoint2"], "temp")
     cherrypy.tree.mount(client_catalog, '/', conf)
     cherrypy.config.update({'server.socket_host': HOST})
     cherrypy.config.update({'server.socket_port': HOST_PORT})
     cherrypy.engine.start()
+    d.register_or_refersh()
     loopCheck(client_catalog, 120)
     cherrypy.engine.block()
+
+
 
 
