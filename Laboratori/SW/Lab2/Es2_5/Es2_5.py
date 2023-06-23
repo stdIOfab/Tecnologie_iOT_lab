@@ -200,7 +200,7 @@ class ResourceCatalog:
             sub = True
         lenTopic = len(topic.split("/"))
         if lenTopic == 8 :
-            id = topic.split("/")[5]
+            id = topic.split("/")[7]
         else :
             id = ""
 
@@ -224,13 +224,17 @@ class ResourceCatalog:
     #            self.myMqttClient.myPublish("/tiot/2/catalog/subscription/services/subscription", (json.dumps({"services": self.services}, indent=4)))
 #
     def post_mqtt(self, uri, params):
-
         if uri[1] == "devices" and uri[0] == 8:
             body = json.loads(params.decode('utf-8'))
             body["timestamp"] = time.time()
-            self.searchVal(body, "device")
-            self.storeVal()
-            self.myMqttClient.myPublish(f"/tiot/2/catalog/subscription/devices/subscription/{uri[2]}", (json.dumps({"devices": self.devices}, indent=4)))
+            already = False
+            for el in self.devices:
+                if el['id'] == body['id']:
+                    already = True
+                    break
+            if not already:
+                self.devices.append(body)
+            self.myMqttClient.myPublish("/tiot/2/catalog/subscription/devices/subscription/"+uri[2]+'/response', (json.dumps({"devices": self.devices}, indent=4)))
 
 def loopCheck(classObject:ResourceCatalog, leasingTime=120):
     schedule.every(10).seconds.do(classObject.removeOld, leasingTime)
