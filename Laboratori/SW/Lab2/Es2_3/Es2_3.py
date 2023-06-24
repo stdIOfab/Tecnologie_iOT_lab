@@ -102,7 +102,7 @@ class CatalogREST:
 
     def GET(self, *uri, **params):
         if len(uri) == 0:
-            return f'{{"subscriptions":{{' \
+            return '{"subscriptions":{' \
                    '"REST":{' \
                    f'    "device":"http://{self.currentHost}:{self.hostPort}/devices/subscription",' \
                    f'    "service": "http://{self.currentHost}:{self.hostPort}/services/subscription",' \
@@ -111,7 +111,7 @@ class CatalogREST:
                    '"device":{' \
                    f'    "hostname":"{self.messagebroker["domain"]}",' \
                    f'    "port":{self.messagebroker["port"]},' \
-                   '    "topic":"/tiot/2/GET/devices/subscription"}}}}'
+                   '    "topic":"/tiot/2/catalog/subscription/devices/subscription"}}}}'
 
         if uri[0] == "messagebroker":
             return json.dumps(self.messagebroker, indent=4)

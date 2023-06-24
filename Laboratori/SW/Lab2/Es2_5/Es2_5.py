@@ -108,16 +108,16 @@ class ResourceCatalog:
 
     def GET(self, *uri, **params):
         if len(uri) == 0:
-            return f'"subscriptions":{{' \
+            return '{"subscriptions":{' \
                    '"REST":{' \
                    f'    "device":"http://{self.currentHost}:{self.hostPort}/devices/subscription",' \
-                   f'    "service": "http://{self.currentHost}:{self.hostPort}/services/subscription"' \
+                   f'    "service": "http://{self.currentHost}:{self.hostPort}/services/subscription",' \
                    f'    "user":"http://{self.currentHost}:{self.hostPort}/users/subscription"}},' \
                    '"MQTT":{' \
                    '"device":{' \
-                   f'    "hostname":{self.messagebroker["domain"]},' \
+                   f'    "hostname":"{self.messagebroker["domain"]}",' \
                    f'    "port":{self.messagebroker["port"]},' \
-                   '    "topic":"/tiot/2/catalog/devices/subscription"}}}'
+                   '    "topic":"/tiot/2/catalog/subscription/devices/subscription"}}}}'
 
         if uri[0] == "messagebroker":
             return json.dumps(self.messagebroker, indent=4)
