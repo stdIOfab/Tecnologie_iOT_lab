@@ -16,13 +16,14 @@ class ResourceCatalog:
     dataFile = "data.json"
     thread_lock = threading.Lock()
 
-    def __init__(self, domain, port, currentHost, hostPort):
+    def __init__(self, domain, port, currentHost, hostPort, leasingTime):
         self.messagebroker = {
             "domain": domain,
             "port": port
         }
         self.hostPort = hostPort
         self.currentHost = currentHost
+        self.leasingTime = leasingTime
         self.devices = []
         self.users = []
         self.services = []
@@ -30,9 +31,11 @@ class ResourceCatalog:
         self.readVal()
 
         self.clientID = "tiot-2"
-        self.myMqttClient = MyMQTT(self.clientID, "test.mosquitto.org", 1883, self)
+        self.myMqttClient = MyMQTT(self.clientID, self.messagebroker["domain"], self.messagebroker["port"], self)
         self.run()
         self.myMqttClient.mySubscribe("/tiot/2/catalog/subscription/devices/subscription")
+
+        self.removeOld()
 
     def get_currentHost(self):
         return self.currentHost
@@ -94,15 +97,16 @@ class ResourceCatalog:
                 return element
         return None
 
-    def removeOld(self, leasingTime):
+    def removeOld(self):
+        threading.Timer(1.0, self.removeOld).start()
         currentTime = time.time()
         if len(self.devices) > 0:
             for i, devInfo in enumerate(self.devices):
-                if currentTime - devInfo.get("timestamp") >= leasingTime:
+                if currentTime - devInfo.get("timestamp") >= self.leasingTime:
                     self.devices.pop(i)
         if len(self.services) > 0:
             for i, serInfo in enumerate(self.services):
-                if currentTime - serInfo.get("timestamp") >= leasingTime:
+                if currentTime - serInfo.get("timestamp") >= self.leasingTime:
                     self.services.pop(i)
         self.storeVal()
 
@@ -118,9 +122,6 @@ class ResourceCatalog:
                    f'    "hostname":"{self.messagebroker["domain"]}",' \
                    f'    "port":{self.messagebroker["port"]},' \
                    '    "topic":"/tiot/2/catalog/subscription/devices/subscription"}}}}'
-
-        if uri[0] == "messagebroker":
-            return json.dumps(self.messagebroker, indent=4)
 
         elif uri[0] == "devices":
             if len(uri) == 1:
@@ -185,11 +186,11 @@ class ResourceCatalog:
             cherrypy.HTTPError(404, "Request not found on this server")
 
     def run(self):
-        print("running Catalog MQTT %s" % (self.clientID))
+        print("running Catalog MQTT %s" % self.clientID)
         self.myMqttClient.start()
 
     def end(self):
-        print("ending %s" % (self.clientID))
+        print("ending %s" % self.clientID)
         self.myMqttClient.stop()
 
     def notify(self, topic, msg):
@@ -220,12 +221,6 @@ class ResourceCatalog:
                 self.devices.append(body)
             self.myMqttClient.myPublish("/tiot/2/catalog/subscription/devices/subscription/"+uri[2]+'/response', (json.dumps({"devices": self.devices}, indent=4)))
 
-def loopCheck(classObject:ResourceCatalog, leasingTime=120):
-    schedule.every(10).seconds.do(classObject.removeOld, leasingTime)
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
-
 
 if __name__ == "__main__":
     conf = {
@@ -235,12 +230,11 @@ if __name__ == "__main__":
             'tools.staticdir.root': os.path.abspath(os.getcwd())
         }
     }
-    client_catalog = ResourceCatalog("mqtt.eclipse.org", 1883, HOST, HOST_PORT)
+    client_catalog = ResourceCatalog("test.mosquitto.org", 1883, HOST, HOST_PORT, 120)
     cherrypy.tree.mount(client_catalog, '/', conf)
     cherrypy.config.update({'server.socket_host': HOST})
     cherrypy.config.update({'server.socket_port': HOST_PORT})
     cherrypy.engine.start()
-    loopCheck(client_catalog, 120)
     cherrypy.engine.block()
 
 

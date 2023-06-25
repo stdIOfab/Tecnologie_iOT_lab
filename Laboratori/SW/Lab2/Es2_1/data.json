@@ -1,1 +1,1 @@
-{"users": [], "devices": [], "services": []}
+{"users": [], "devices": [{"id": "7", "endpoints": {"MQTT": ["diobeppe", "diopeppe"], "REST": ["diobeppino", "diopeppino"]}, "availableRes": "volare, bestemmiare, giocare", "timestamp": 1687643490.7423801}], "services": []}

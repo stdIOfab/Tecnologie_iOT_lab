@@ -1,7 +1,6 @@
 import os
 import time
 import threading
-import schedule
 import requests
 import json
 import cherrypy
@@ -15,7 +14,7 @@ class CatalogREST:
     dataFile = "data.json"
     thread_lock = threading.Lock()
 
-    def __init__(self, domain, port, currentHost, hostPort):
+    def __init__(self, domain, port, currentHost, hostPort, leasingTime):
         self.messagebroker = {
             "domain": domain,
             "port": port
@@ -25,8 +24,11 @@ class CatalogREST:
         self.devices = []
         self.users = []
         self.services = []
+        self.leasingTime = leasingTime
 
         self.readVal()
+
+        self.removeOld()
 
     def get_currentHost(self):
         return self.currentHost
@@ -88,15 +90,16 @@ class CatalogREST:
                 return element
         return None
 
-    def removeOld(self, leasingTime):
+    def removeOld(self):
+        threading.Timer(1.0, self.removeOld).start()
         currentTime = time.time()
         if len(self.devices) > 0:
             for i, devInfo in enumerate(self.devices):
-                if currentTime - devInfo.get("timestamp") >= leasingTime:
+                if currentTime - devInfo.get("timestamp") >= self.leasingTime:
                     self.devices.pop(i)
         if len(self.services) > 0:
             for i, serInfo in enumerate(self.services):
-                if currentTime - serInfo.get("timestamp") >= leasingTime:
+                if currentTime - serInfo.get("timestamp") >= self.leasingTime:
                     self.services.pop(i)
         self.storeVal()
 
@@ -113,8 +116,6 @@ class CatalogREST:
                    f'    "port":{self.messagebroker["port"]},' \
                    '    "topic":"/tiot/2/catalog/subscription/devices/subscription"}}}}'
 
-        if uri[0] == "messagebroker":
-            return json.dumps(self.messagebroker, indent=4)
 
         elif uri[0] == "devices":
             if len(uri) == 1:
@@ -178,22 +179,16 @@ class CatalogREST:
         else:
             cherrypy.HTTPError(404, "Request not found on this server")
 
-def loopCheck(classObject:CatalogREST, leasingTime=120):
-    schedule.every(10).seconds.do(classObject.removeOld, leasingTime)
-    while True:
-        schedule.run_pending()
-        time.sleep(1)
 
-
-class IoT_dev:
+class IoTDev:
     def __init__(self):
         self.dataDev = {"id": "1", "endpoint": ["endpoint1", "endpoint2"], "resource": "temperature"}
+        self.add_device()
 
-    def add_device(self):
+    def add_device(self, refreshTime=10):
+        threading.Timer(refreshTime, self.add_device).start()
         data_json = json.dumps(self.dataDev)
         r = requests.post(f'http://{client_catalog.get_currentHost()}:{client_catalog.get_hostPort()}/devices/subscription', data=data_json)
-        time.sleep(10)
-        IoT_dev.add_device(self)
 
 if __name__ == "__main__":
     conf = {
@@ -203,14 +198,12 @@ if __name__ == "__main__":
             'tools.staticdir.root': os.path.abspath(os.getcwd())
         }
     }
-    client_catalog = CatalogREST("mqtt.eclipse.org", 1883, HOST, HOST_PORT)
+    client_catalog = CatalogREST("mqtt.eclipse.org", 1883, HOST, HOST_PORT, 100)
     cherrypy.tree.mount(client_catalog, '/', conf)
     cherrypy.config.update({'server.socket_host': HOST})
     cherrypy.config.update({'server.socket_port': HOST_PORT})
     cherrypy.engine.start()
-    client_IoT = IoT_dev()
-    client_IoT.add_device()
-    loopCheck(client_catalog, 120)
+    client_IoT = IoTDev()
     cherrypy.engine.block()
 
 

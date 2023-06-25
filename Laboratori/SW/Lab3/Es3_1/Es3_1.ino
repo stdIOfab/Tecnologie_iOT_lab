@@ -7,11 +7,12 @@
 
 #define BUFFER_SIZE 10000 //dimensione del buffer per ricevere i dati di GET dal Catalog
 
-const String ID_DEVICE = "1"; 
-const int RENEW_SUBSCRIPTION_TIME = 60;
-String subscriptionForm;
+const String ID_DEVICE = "TIoT2"; //identifica univocamente il dispositivo
+const int RENEW_SUBSCRIPTION_TIME = 60; // secondi che intercorrono tra una registrazione e il successivo rinnovo
+long int lastRenewal = -RENEW_SUBSCRIPTION_TIME*1000;
+String subscriptionForm; //contenuto sottoforma di json testuale della richiesta di subscription
 
-MBED_RPI_PICO_Timer ITimer1(1);
+MBED_RPI_PICO_Timer ITimer1(1); //timer per il rinnovo della subscription
 
 char ssid[] = SECRET_SSID;
 char pass[] = SECRET_PASS;
@@ -28,24 +29,24 @@ const int TEMPSENSOR_PIN = 14;
 int rawRead;
 float R, temp;
 
-String broker_address;
-int broker_port;
+String broker_address; //indirizzo IP del broker
+int broker_port; //porta del broker
 String subscription_topic;
 char server_address[] = "172.20.10.3"; //indirizzo del resource catalog
-int server_port = 8080;
+int server_port = 8080; //porta del resource catalog
 
 WiFiClient wifi;
 HttpClient http = HttpClient(wifi, server_address, server_port);
 PubSubClient client(wifi);
 
+//variabili di attesa per la GET in fase iniziale per il collegamento con il catalog
 const int kNetworkTimeout = 30*1000;
 const int kNetworkDelay = 1000;
+//indirizzo del catalog alla quale far riferimento
 String kPath = "/";
 
-bool system_ok = false;
-
 // Enough space for 1 SenML record (plus spare)
-const int capacity = JSON_OBJECT_SIZE(2) + JSON_ARRAY_SIZE(1) + JSON_OBJECT_SIZE(4) + 100;
+const int capacity = JSON_OBJECT_SIZE(3) + JSON_ARRAY_SIZE(4) + JSON_OBJECT_SIZE(8) + 100;
 DynamicJsonDocument doc_snd(capacity);
 DynamicJsonDocument doc_rec(capacity);
 
@@ -78,23 +79,27 @@ bool isFloat(String tString){
   return true;
 }
 
+//genera il contenuto JSON sottoforma testuale per la richiesta di subscription
 String subFormGenerator(){
   doc_snd.clear();
-  doc_snd["id"] = ID_DEVICE;
-  JsonObject endpnts = doc_snd.createNestedObject("endpoints");
+  JsonObject root = doc_snd.to<JsonObject>();
+  root["id"] = ID_DEVICE;
+  JsonObject endpnts = root.createNestedObject("endpoints");
   JsonArray MQTTArray = endpnts.createNestedArray("MQTT");
   JsonArray RESTArray = endpnts.createNestedArray("REST");
-  MQTTArray.add("SUB" + base_topic + ID_DEVICE + "/temperature");
-  MQTTArray.add("PUB" + base_topic + ID_DEVICE + "/led");
-  RESTArray.add("");
-  JsonArray avlblRsArray = doc_snd.createNestedArray("availableRes");
-  avlblRsArray.add("temperature");
-  avlblRsArray.add("led");
+  MQTTArray.add("SUB - " + base_topic + ID_DEVICE + "/temperature");
+  MQTTArray.add("PUB - " + base_topic + ID_DEVICE + "/led");
+  root["timestamp"] = millis();
+  JsonArray avlblRs = root.createNestedArray("availableRes");
+  avlblRs.add("temperature");
+  avlblRs.add("led");
+  
   String output;
   serializeJson(doc_snd, output);
   return output;
 }
 
+//lettura della temperatura
 float readTemp()
 {
   rawRead = analogRead(TEMPSENSOR_PIN);
@@ -105,6 +110,7 @@ float readTemp()
   return temp;
 }
 
+//funzione di callback per la subscribe in seguito ad un messaggio pubblicato
 void callback(char* topic, byte* payload, unsigned int length) {
   DeserializationError err = deserializeJson(doc_rec, (char*) payload);
   if (err) {
@@ -129,9 +135,10 @@ void callback(char* topic, byte* payload, unsigned int length) {
 
 int status = WL_IDLE_STATUS;
 
+//funzione di codifica del senML utilizzata per le operazioni di publish
 String senMlEncode(float val, String measureUnit) {
   doc_snd.clear();
-  doc_snd["bn"] = "ArduinoGroup2";
+  doc_snd["bn"] = ID_DEVICE;
   doc_snd["e"][0]["n"] = "temperature";
   doc_snd["e"][1]["t"] = int(millis()/1000);
   doc_snd["e"][2]["v"] = val;
@@ -141,10 +148,10 @@ String senMlEncode(float val, String measureUnit) {
   return output;
 }
 
-void reconnect(PubSubClient client) {
+void reconnect(){
   // Loop until connected
   while (client.state() != MQTT_CONNECTED) {
-    if (client.connect("TiotGroup2")) {
+    if (client.connect("TiOTArduino2")) {
       client.subscribe((base_topic + ID_DEVICE + String("/led")).c_str());
     } else {
       Serial.print("failed, rc=");
@@ -155,6 +162,7 @@ void reconnect(PubSubClient client) {
   }
 }
 
+//nella fase di setup interroga il catalog per ricevere i parametri di funzionamento e successivamente registrarsi
 void readCatalog(){
   char buffer[BUFFER_SIZE];
   int bufferIndex = 0;
@@ -216,18 +224,25 @@ void readCatalog(){
   }
 }
 
-void renewSubscription(uint alarm_num){
-  TIMER_ISR_START(alarm_num);
-  if(!client.publish(subscription_topic.c_str(), subscriptionForm.c_str())){
-    Serial.println("Unable to renew the subscription, the program will try again later...");
+//rinnnovo della subscription al catalog
+void renewSubscription(){
+  if(client.publish(subscription_topic.c_str(), subscriptionForm.c_str())){
+    Serial.println("Subscription renew completed!");
+    lastRenewal = millis();
+  }else{
+    Serial.println("Subscription renew failed... new try later...");
   }
-  TIMER_ISR_END(alarm_num);
 }
 
-bool MQTTPublisher(){
+void MQTTPublisher(){
   String body = senMlEncode(readTemp(), "C");
-  bool status = client.publish((base_topic + String("/temperature")).c_str(), body.c_str());
-  return status;
+  bool status = client.publish((base_topic + ID_DEVICE + String("/temperature")).c_str(), body.c_str());
+  if(status){
+    Serial.print("Publish succeed at topic: ");
+    Serial.println(base_topic + ID_DEVICE + String("/temperature"));
+  }else{
+    Serial.println("Publish failed");
+  }
 }
 
 void setup() {
@@ -259,21 +274,23 @@ void setup() {
     client.setServer(broker_address.c_str(), broker_port);
     client.setCallback(callback);
     subscriptionForm = subFormGenerator();
-    while(client.publish(subscription_topic.c_str(), subscriptionForm.c_str())){
-      Serial.println("Unable to subscribe to the catalog... the program will try again in 4 seconds...");
-      delay(4000);
-    }
-    system_ok = true;
+    Serial.println(subscriptionForm);
+    Serial.println(subscription_topic);
   }
-  ITimer1.setInterval(RENEW_SUBSCRIPTION_TIME*1000000, renewSubscription);
 }
 
 void loop() {
   if(client.state() != MQTT_CONNECTED) {
-    reconnect(client);
+    reconnect();
   }
+  //publisher
+  MQTTPublisher();
   //subscriber
   client.loop();
+  
+  if(millis()-lastRenewal > RENEW_SUBSCRIPTION_TIME*1000){
+    renewSubscription();
+  }
   delay(REFRESH);
 }
 
