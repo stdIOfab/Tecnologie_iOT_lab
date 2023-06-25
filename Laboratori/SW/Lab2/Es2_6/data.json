@@ -1,1 +1,1 @@
-{"users": [], "devices": [], "services": []}
+{"users": [], "devices": [{"id": "publisher_tiot_2", "endpoint": ["endpoint1", "endpoint2"], "resource": "temp", "timestamp": 1687703682.7276218}], "services": []}
