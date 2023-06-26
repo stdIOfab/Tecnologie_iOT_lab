@@ -26,9 +26,6 @@ class MQTTSubscriber:
         sub_form = {}
         sub_form["id"] = "TiOT2Service"
         sub_form["description"] = "This service only subscribes to a topic in order to read data from a device"
-        sub_form["endpoints"] = {}
-        sub_form["endpoints"]["MQTT"] = {}
-        sub_form["endpoints"]["REST"] = {}
         sub_form["endpoints"]["MQTT"]["PUBLISH"] = {}
         sub_form["endpoints"]["MQTT"]["SUBSCRIBE"] = {}
         sub_form["endpoints"]["REST"]["POST"] = {}
