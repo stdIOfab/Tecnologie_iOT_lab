@@ -21,7 +21,3 @@ class DevIoTPublisher():
             dataDev["timestamp"] = t
             self.myMqttClient.myPublish("/tiot/2/catalog/subscription/devices/subscription/" + dataDev['id'] + '/response', json.dumps(dataDev))
             time.sleep(60)
-
-if __name__ == "__main__":
-    d = DevIoTPublisher("test.mosquitto.org", 1883, "publisher_tiot_2", ["endpoint1", "endpoint2"], "temp")
-    d.register_or_refresh()

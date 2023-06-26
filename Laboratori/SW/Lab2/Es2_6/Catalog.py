@@ -4,8 +4,9 @@ import threading
 import json
 import cherrypy
 from MyMQTT import MyMQTT
+from IoT_device import DevIoTPublisher
 
-HOST = "172.20.10.3"
+HOST = "127.0.0.1"
 HOST_PORT = 8080
 
 
@@ -42,6 +43,7 @@ class ResourceCatalog:
 
     def searchVal(self, inputBody, type):
         idVal = inputBody["id"]
+        print(idVal)
         if type == "user":
             for e in self.users:
                 if e["id"] == idVal:
@@ -192,23 +194,24 @@ class ResourceCatalog:
         self.myMqttClient.stop()
 
     def notify(self, topic, msg):
-        # /tiot/{group}/catalog/subscription/devices/subscription/
+        # /tiot/{group}/catalog/subscription/devices/subscription/{id}/response
+        print('notify: ', topic)
         typeReq = topic.split("/")[5]
         sub = False
         if topic.split("/")[4] == 'subscription' :
             sub = True
         lenTopic = len(topic.split("/"))
 
-        if sub and lenTopic == 7 :
+        if sub and lenTopic == 9 :
             self.post_mqtt([lenTopic, typeReq], msg)
 
     def post_mqtt(self, uri, params):
-        if uri[1] == "devices" and uri[0] == 7:
+        if uri[1] == "devices" and uri[0] == 9:
             body = json.loads(params.decode('utf-8'))
             body["timestamp"] = time.time()
             self.searchVal(body, "device")
             self.storeVal()
-            self.myMqttClient.myPublish("/tiot/2/catalog/subscription/devices/subscription/"+body["id"]+'/response', json.dumps(body))
+            self.myMqttClient.myPublish("/tiot/2/catalog/subscription/devices/subscription/"+body["id"], json.dumps(body))
 
 if __name__ == "__main__":
     conf = {
@@ -223,6 +226,8 @@ if __name__ == "__main__":
     cherrypy.config.update({'server.socket_host': HOST})
     cherrypy.config.update({'server.socket_port': HOST_PORT})
     cherrypy.engine.start()
+    d = DevIoTPublisher("test.mosquitto.org", 1883, "publisher_tiot_2", ["endpoint1", "endpoint2"], "temp")
+    d.register_or_refresh()
     cherrypy.engine.block()
 
 
