@@ -5,7 +5,7 @@ import json
 import cherrypy
 from MyMQTT import MyMQTT
 
-HOST = "127.0.0.1"
+HOST = "172.20.10.3"
 HOST_PORT = 8080
 
 
@@ -28,7 +28,7 @@ class ResourceCatalog:
 
         self.readVal()
 
-        self.clientID = "Catalog-TIoT2"
+        self.clientID = "TiOTCatalog2"
         self.myMqttClient = MyMQTT(self.clientID, self.messagebroker["domain"], self.messagebroker["port"], self)
         self.run()
         self.myMqttClient.mySubscribe("/tiot/2/catalog/subscription/devices/subscription")
@@ -122,34 +122,34 @@ class ResourceCatalog:
 
 
         elif uri[0] == "devices":
-            if len(uri) == 1:
+            if len(uri) == 2:
                 return json.dumps({"devices": self.devices}, indent=4)
             else:
-                device = ResourceCatalog.searchID(self.devices, uri[1])
+                device = ResourceCatalog.searchID(self.devices, uri[2])
                 if device is None:
-                    device = f"No device found with the given ID {uri[1]}"
+                    device = f"No device found with the given ID {uri[2]}"
                 else:
                     device = json.dumps(device, indent=4)
                 return device
 
         elif uri[0] == "users":
-            if len(uri) == 1:
+            if len(uri) == 2:
                 return json.dumps({"users": self.users}, indent=4)
             else:
-                user = ResourceCatalog.searchID(self.users, uri[1])
+                user = ResourceCatalog.searchID(self.users, uri[2])
                 if user is None:
-                    user = f"No user found with the given ID {uri[1]}"
+                    user = f"No user found with the given ID {uri[2]}"
                 else:
                     user = json.dumps(user, indent=4)
                 return user
 
         elif uri[0] == "services":
-            if len(uri) == 1:
+            if len(uri) == 2:
                 return json.dumps({"services": self.services}, indent=4)
             else:
-                service = ResourceCatalog.searchID(self.services, uri[1])
+                service = ResourceCatalog.searchID(self.services, uri[2])
                 if service is None:
-                    service = f"No service found with the given ID {uri[1]}"
+                    service = f"No service found with the given ID {uri[2]}"
                 else:
                     service = json.dumps(service, indent=4)
                 return service
@@ -184,11 +184,11 @@ class ResourceCatalog:
             cherrypy.HTTPError(404, "Request not found on this server")
 
     def run(self):
-        print("running Catalog MQTT %s" % (self.clientID))
+        print("running Catalog MQTT %s" % self.clientID)
         self.myMqttClient.start()
 
     def end(self):
-        print("ending %s" % (self.clientID))
+        print("ending %s" % self.clientID)
         self.myMqttClient.stop()
 
     def notify(self, topic, msg):

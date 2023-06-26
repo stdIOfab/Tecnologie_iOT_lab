@@ -3,11 +3,6 @@ import json
 from MyMQTT import MyMQTT
 import time
 
-host = "127.0.0.1"
-port = 8080
-
-url = ""
-
 class MQTTSubscriber:
     def __init__(self, domain, port):
         self.domain = domain
@@ -21,7 +16,6 @@ class MQTTSubscriber:
         self.broker = self.body["subscriptions"]["MQTT"]["device"]["hostname"]
         self.port = self.body["subscriptions"]["MQTT"]["device"]["port"]
         self.myMqttClient = MyMQTT(self.clientID, self.broker, self.port, self)
-        self.myMqttClient.start()
     def registerService(self):
         sub_form = {}
         sub_form["id"] = "TiOT2Service"
@@ -35,29 +29,31 @@ class MQTTSubscriber:
         sub_form["endpoints"]["REST"]["GET"] = {}
         sub_form["timestamp"] = time.time()
         try:
-            response = requests.post(self.body["subscriptions"]["REST"]["service"], json.dumps(sub_form))
+            requests.post(self.body["subscriptions"]["REST"]["service"], json.dumps(sub_form))
         except requests.exceptions.ConnectionError:
             print("Unable to add the service to the catalog")
             exit(1)
-
     def MQTTsubscribe(self):
         try:
-            response = requests.get(self.body["subscriptions"]["REST"]["device"])
-            id = json.loads(response.text)["devices"][0]["id"] #Assuming there is only one device
-            response = requests.get(self.body["subscriptions"]["REST"]["device"]+"/"+id)
-        except (requests.exceptions.ConnectionError, json.decoder.JSONDecodeError):
+            response = json.loads(requests.get(self.body["subscriptions"]["REST"]["device"]).text)
+            id = response["devices"][0]["id"] #Assuming there is only one device
+            response = requests.get("{url1}/{url2}".format(url1 = self.body["subscriptions"]["REST"]["device"], url2 = id))
+        except Exception:
             print("Unable to connect to the catalog or to retrieve the device id")
             exit(1)
-        topic = json.loads(response.text)["endpoints"]["MQTT"]["PUBLISH"]["temperature"]
-        self.myMqttClient.mySubscribe(topic)
-
+        topic = json.loads(response.text)
+        self.myMqttClient.mySubscribe(topic["endpoints"]["MQTT"]["PUBLISH"]["temperature"])
     def notify(self, topic, msg):
-        print("Message received: ", msg)
+        print("Message received: ", str(msg))
 
 if __name__ == "__main__":
-    sub_client = MQTTSubscriber(host, port)
-    sub_client.registerService()
-    sub_client.MQTTsubscribe()
+    subscriber = MQTTSubscriber("172.20.10.3", 8080)
+    subscriber.registerService()
+    subscriber.MQTTsubscribe()
+    subscriber.myMqttClient.start()
+    while True:
+        time.sleep(1)
+
 
 
 

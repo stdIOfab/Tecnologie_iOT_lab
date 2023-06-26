@@ -151,8 +151,9 @@ String senMlEncode(float val, String measureUnit) {
 
 void reconnect(){
   // Loop until connected
-  while (client.state() != MQTT_CONNECTED) {
-    if (client.connect("TiOTArduino2")) {
+  const String session_name = ID_DEVICE + "-Board";
+  while(client.state() != MQTT_CONNECTED) {
+    if(client.connect(session_name.c_str())){
       client.subscribe((base_topic + ID_DEVICE + String("/led")).c_str());
     } else {
       Serial.print("failed, rc=");
@@ -228,10 +229,13 @@ void readCatalog(){
 //rinnnovo della subscription al catalog
 void renewSubscription(){
   if(client.publish(subscription_topic.c_str(), subscriptionForm.c_str())){
-    Serial.println("Subscription renew completed!");
+    Serial.print("Subscription renew completed at ");
+    Serial.println(subscription_topic);
     lastRenewal = millis();
   }else{
-    Serial.println("Subscription renew failed... new try later...");
+    Serial.print("Subscription renew failed at ");
+    Serial.print(subscription_topic.c_str());
+    Serial.println(". New try in few seconds...");
   }
 }
 

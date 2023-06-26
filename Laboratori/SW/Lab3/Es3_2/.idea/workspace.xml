@@ -6,8 +6,11 @@
   <component name="ChangeListManager">
     <list default="true" id="e3d24b70-df90-4216-94e6-fbe314dbb376" name="Changes" comment="">
       <change beforePath="$PROJECT_DIR$/../Es3_1/Es3_1.ino" beforeDir="false" afterPath="$PROJECT_DIR$/../Es3_1/Es3_1.ino" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Catalog.py" beforeDir="false" afterPath="$PROJECT_DIR$/Catalog.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Es3_2.py" beforeDir="false" afterPath="$PROJECT_DIR$/Es3_2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/MyMQTT.py" beforeDir="false" afterPath="$PROJECT_DIR$/MyMQTT.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/data.json" beforeDir="false" afterPath="$PROJECT_DIR$/data.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../es3Lab3.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -42,6 +45,17 @@
       <updated>1687643335579</updated>
     </task>
     <servers />
+  </component>
+  <component name="Vcs.Log.Tabs.Properties">
+    <option name="TAB_STATES">
+      <map>
+        <entry key="MAIN">
+          <value>
+            <State />
+          </value>
+        </entry>
+      </map>
+    </option>
   </component>
   <component name="VcsManagerConfiguration">
     <option name="ADD_EXTERNAL_FILES_SILENTLY" value="true" />
