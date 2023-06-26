@@ -16,6 +16,7 @@ class MQTTSubscriber:
         self.broker = self.body["subscriptions"]["MQTT"]["device"]["hostname"]
         self.port = self.body["subscriptions"]["MQTT"]["device"]["port"]
         self.myMqttClient = MyMQTT(self.clientID, self.broker, self.port, self)
+        self.myMqttClient.start()
     def registerService(self):
         sub_form = {}
         sub_form["id"] = "TiOT2Service"
@@ -50,7 +51,6 @@ if __name__ == "__main__":
     subscriber = MQTTSubscriber("172.20.10.3", 8080)
     subscriber.registerService()
     subscriber.MQTTsubscribe()
-    subscriber.myMqttClient.start()
     while True:
         time.sleep(1)
 

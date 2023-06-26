@@ -5,10 +5,17 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5dd3b8e6-6d08-4751-833c-00bad4e5b642" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/../Es3_1/Es3_1.ino" beforeDir="false" afterPath="$PROJECT_DIR$/../Es3_1/Es3_1.ino" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Es3_2/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../Es3_2/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../Es3_2/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../Es3_2/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Es3_2/Es3_2.py" beforeDir="false" afterPath="$PROJECT_DIR$/../Es3_2/Es3_2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Es3_2/data.json" beforeDir="false" afterPath="$PROJECT_DIR$/../Es3_2/data.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Es3_3.py" beforeDir="false" afterPath="$PROJECT_DIR$/Es3_3.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cp.py" beforeDir="false" afterPath="$PROJECT_DIR$/cp.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/cp2.py" beforeDir="false" afterPath="$PROJECT_DIR$/cp2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cp.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/cp2.py" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/es3Lab3.py" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -34,22 +41,24 @@
   &quot;keyToString&quot;: {
     &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
     &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
     &quot;last_opened_file_path&quot;: &quot;/Users/marcozoppi/Documents/GitHub/Tecnologie_iOT_lab/Laboratori/SW/Lab3/Es3_3&quot;
   }
 }</component>
   <component name="RunManager">
     <configuration name="main" type="PythonConfigurationType" factoryName="Python" nameIsGenerated="true">
-      <module name="Es3_3" />
       <option name="INTERPRETER_OPTIONS" value="" />
       <option name="PARENT_ENVS" value="true" />
       <envs>
         <env name="PYTHONUNBUFFERED" value="1" />
       </envs>
-      <option name="SDK_HOME" value="" />
+      <option name="SDK_HOME" value="/usr/local/bin/python" />
+      <option name="SDK_NAME" value="Python 3.10" />
       <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
-      <option name="IS_MODULE_SDK" value="true" />
+      <option name="IS_MODULE_SDK" value="false" />
       <option name="ADD_CONTENT_ROOTS" value="true" />
       <option name="ADD_SOURCE_ROOTS" value="true" />
+      <module name="" />
       <option name="SCRIPT_NAME" value="$PROJECT_DIR$/main.py" />
       <option name="PARAMETERS" value="" />
       <option name="SHOW_COMMAND_LINE" value="false" />

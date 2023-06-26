@@ -86,7 +86,7 @@ String subFormGenerator(){
   JsonObject RESTobj = endpnts.createNestedObject("REST");
   JsonObject PUBLISHobject = MQTTobj.createNestedObject("PUBLISH");
   PUBLISHobject["temperature"] = base_topic + ID_DEVICE + "/temperature";
-  JsonObject SUBSCRIBEobject = MQTTobj.createNestedObject("SUSCRIBE");
+  JsonObject SUBSCRIBEobject = MQTTobj.createNestedObject("SUBSCRIBE");
   SUBSCRIBEobject["led"] = base_topic + ID_DEVICE + "/led";
   JsonObject POSTobject = RESTobj.createNestedObject("POST");
   JsonObject GETobject = RESTobj.createNestedObject("GET");

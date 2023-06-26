@@ -5,12 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e3d24b70-df90-4216-94e6-fbe314dbb376" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../Es3_1/Es3_1.ino" beforeDir="false" afterPath="$PROJECT_DIR$/../Es3_1/Es3_1.ino" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Catalog.py" beforeDir="false" afterPath="$PROJECT_DIR$/Catalog.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/Es3_2.py" beforeDir="false" afterPath="$PROJECT_DIR$/Es3_2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/MyMQTT.py" beforeDir="false" afterPath="$PROJECT_DIR$/MyMQTT.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/data.json" beforeDir="false" afterPath="$PROJECT_DIR$/data.json" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Es3_3/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../Es3_3/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../Es3_3/cp2.py" beforeDir="false" afterPath="$PROJECT_DIR$/../Es3_3/cp2.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
