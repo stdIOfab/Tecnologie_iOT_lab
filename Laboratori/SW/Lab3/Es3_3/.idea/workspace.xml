@@ -5,13 +5,10 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="5dd3b8e6-6d08-4751-833c-00bad4e5b642" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/../Es3_1/Es3_1.ino" beforeDir="false" afterPath="$PROJECT_DIR$/../Es3_1/Es3_1.ino" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Es3_1/arduino_secret.h" beforeDir="false" afterPath="$PROJECT_DIR$/../Es3_1/arduino_secret.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Es3_2/.idea/Es3_2.iml" beforeDir="false" afterPath="$PROJECT_DIR$/../Es3_2/.idea/Es3_2.iml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Es3_2/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../Es3_2/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../Es3_2/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/../Es3_2/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Es3_2/Catalog.py" beforeDir="false" afterPath="$PROJECT_DIR$/../Es3_2/Catalog.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../Es3_2/Es3_2.py" beforeDir="false" afterPath="$PROJECT_DIR$/../Es3_2/Es3_2.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Es3_3.py" beforeDir="false" afterPath="$PROJECT_DIR$/Es3_3.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cp.py" beforeDir="false" afterPath="$PROJECT_DIR$/cp.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/cp2.py" beforeDir="false" afterPath="$PROJECT_DIR$/cp2.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />

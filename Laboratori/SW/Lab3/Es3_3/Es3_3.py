@@ -37,7 +37,7 @@ class MQTTSubscriber:
             print("Unable to add the service to the catalog")
             exit(1)
 
-    def MQTTsubscribe(self):
+    def MQTTpublish(self):
         try:
             response = requests.get(self.body["subscriptions"]["REST"]["device"])
             id = json.loads(response.text)["devices"][0]["id"] #Assuming there is only one device
