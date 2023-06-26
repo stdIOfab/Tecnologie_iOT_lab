@@ -29,7 +29,7 @@ float R, temp;
 String broker_address; //indirizzo IP del broker
 int broker_port; //porta del broker
 String subscription_topic;
-char server_address[] = "172.20.10.3"; //indirizzo del resource catalog
+char server_address[] = "172.20.10.2"; //indirizzo del resource catalog
 int server_port = 8080; //porta del resource catalog
 
 WiFiClient wifi;
