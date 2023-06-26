@@ -1,61 +1,60 @@
 import paho.mqtt.client as mqtt
-import requests 
+import requests
+import json
+from MyMQTT import MyMQTT
+import time
 
-broker_address = "127.0.0.1"
-port = 1883
+host = "127.0.0.1"
+port = 8080
 
 url = ""
 
-def get_end_point():
-    response = requests.get(url +"device/{deviceID}")
-    
-    if response == 200: 
-        data = response.json()
-        endpoint = data["mqtt_endpoint"]
+class MQTTSubscriber:
+    def __init__(self, domain, port):
+        self.domain = domain
+        self.port = port
+        try:
+            self.body = json.loads(requests.get("http://" + self.domain + ":" + str(self.port) + "/").text)
+        except requests.exceptions.ConnectionError:
+            print("Unable to connect to the catalog")
+            exit(1)
+        self.clientID = "MQTT_Subscriber"
+        self.broker = self.body["subscriptions"]["MQTT"]["hostname"]
+        self.port = self.body["subscriptions"]["MQTT"]["port"]
+        self.myMqttClient = MyMQTT(self.clientID, self.broker, self.port, self)
+        self.myMqttClient.start()
+    def registerService(self):
+        sub_form = {}
+        sub_form["id"] = "TiOT2Service"
+        sub_form["description"] = "This service only subscribes to a topic in order to read data from a device"
+        sub_form["endpoints"] = {}
+        sub_form["endpoints"]["MQTT"] = []
+        sub_form["timestamp"] = time.time()
+        try:
+            response = requests.post(self.body["subscriptions"]["REST"]["service"], json.dumps(sub_form))
+        except requests.exceptions.ConnectionError:
+            print("Unable to add the service to the catalog")
+            exit(1)
 
-        return endpoint
-    else: 
-        return "NULL"
+    def MQTTsubscribe(self):
+        try:
+            response = requests.get(self.body["subscriptions"]["REST"]["device"])
+            id = json.loads(response.text)["devices"][0]["id"]
+            response = requests.get(self.body["subscriptions"]["REST"]["device"]+"/"+id)
+        except (requests.exceptions.ConnectionError, json.decoder.JSONDecodeError):
+            print("Unable to connect to the catalog or to retrieve the device id")
+            exit(1)
+        topic = json.loads(response.text)["endpoints"]["MQTT"]["SUBSCRIBE"]
+        self.myMqttClient.mySubscribe(topic)
 
+    def notify(self, topic, msg):
+        print("Message received: ", msg)
 
-def on_my_connect(client, userdata, flag, rc): 
-    print("Connesso" +str(rc))
-    client.subscribe(get_end_point())
+if __name__ == "__main__":
+    sub_client = MQTTSubscriber(host, port)
+    sub_client.registerService()
+    sub_client.MQTTsubscribe()
 
-
-def on_my_message(client, userdata, msg):
-    temp = float(msg.payload.decode("utf-8"))
-    client.publish("temperatura: " , str(temp))
-
-
-client = mqtt.Client(); 
-
-client.on_connect = on_my_connect
-client.on_message = on_my_message
-
-client.connect(broker_address, port, 60)
-
-client.loop_start()
-
-response_reg = requests.post(url+ "/services" , json= {"service_type" : "mqtt_subscriber"})
-
-if response_reg == 201: 
-    print("aggiunto")
-else: 
-    print("non aggiunto")
-
-
-response_sub = requests.get(url +"/subscriptions")
-
-if response_reg== 200: 
-    sub_data = response_sub.json()
-    print("subscribe:", sub_data)
-
-else: 
-    print("nessuna subscribe")
-
-while True: 
-    pass
 
 
 

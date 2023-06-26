@@ -85,10 +85,14 @@ String subFormGenerator(){
   JsonObject root = doc_snd.to<JsonObject>();
   root["id"] = ID_DEVICE;
   JsonObject endpnts = root.createNestedObject("endpoints");
-  JsonArray MQTTArray = endpnts.createNestedArray("MQTT");
-  JsonArray RESTArray = endpnts.createNestedArray("REST");
-  MQTTArray.add("SUB - " + base_topic + ID_DEVICE + "/temperature");
-  MQTTArray.add("PUB - " + base_topic + ID_DEVICE + "/led");
+  JsonObject MQTTobj = endpnts.createNestedObject("MQTT");
+  JsonObject RESTobj = endpnts.createNestedObject("REST");
+  JsonArray PUBLISHarray = MQTTobj.createNestedArray("PUBLISH");
+  JsonArray SUBSCRIBEarray = MQTTobj.createNestedArray("SUSCRIBE");
+  JsonArray POSTarray = RESTobj.createNestedArray("POST");
+  JsonArray GETarray = RESTobj.createNestedArray("GET");
+  SUBSCRIBEarray.add(base_topic + ID_DEVICE + "/temperature");
+  PUBLISHarray.add(base_topic + ID_DEVICE + "/led");
   root["timestamp"] = millis();
   JsonArray avlblRs = root.createNestedArray("availableRes");
   avlblRs.add("temperature");
