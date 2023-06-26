@@ -87,12 +87,12 @@ String subFormGenerator(){
   JsonObject endpnts = root.createNestedObject("endpoints");
   JsonObject MQTTobj = endpnts.createNestedObject("MQTT");
   JsonObject RESTobj = endpnts.createNestedObject("REST");
-  JsonArray PUBLISHarray = MQTTobj.createNestedArray("PUBLISH");
-  JsonArray SUBSCRIBEarray = MQTTobj.createNestedArray("SUSCRIBE");
-  JsonArray POSTarray = RESTobj.createNestedArray("POST");
-  JsonArray GETarray = RESTobj.createNestedArray("GET");
-  SUBSCRIBEarray.add(base_topic + ID_DEVICE + "/temperature");
-  PUBLISHarray.add(base_topic + ID_DEVICE + "/led");
+  JsonObject PUBLISHobject = MQTTobj.createNestedObject("PUBLISH");
+  PUBLISHobject["temperature"] = base_topic + ID_DEVICE + "/temperature";
+  JsonObject SUBSCRIBEobject = MQTTobj.createNestedObject("SUSCRIBE");
+  SUBSCRIBEobject["led"] = base_topic + ID_DEVICE + "/led";
+  JsonObject POSTobject = RESTobj.createNestedObject("POST");
+  JsonObject GETobject = RESTobj.createNestedObject("GET");
   root["timestamp"] = millis();
   JsonArray avlblRs = root.createNestedArray("availableRes");
   avlblRs.add("temperature");

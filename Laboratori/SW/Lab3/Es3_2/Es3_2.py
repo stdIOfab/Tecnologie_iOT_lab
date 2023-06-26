@@ -1,4 +1,3 @@
-import paho.mqtt.client as mqtt
 import requests
 import json
 from MyMQTT import MyMQTT
@@ -19,16 +18,18 @@ class MQTTSubscriber:
             print("Unable to connect to the catalog")
             exit(1)
         self.clientID = "MQTT_Subscriber"
-        self.broker = self.body["subscriptions"]["MQTT"]["hostname"]
-        self.port = self.body["subscriptions"]["MQTT"]["port"]
+        self.broker = self.body["subscriptions"]["MQTT"]["device"]["hostname"]
+        self.port = self.body["subscriptions"]["MQTT"]["device"]["port"]
         self.myMqttClient = MyMQTT(self.clientID, self.broker, self.port, self)
         self.myMqttClient.start()
     def registerService(self):
         sub_form = {}
         sub_form["id"] = "TiOT2Service"
         sub_form["description"] = "This service only subscribes to a topic in order to read data from a device"
-        sub_form["endpoints"] = {}
-        sub_form["endpoints"]["MQTT"] = []
+        sub_form["endpoints"]["MQTT"]["PUBLISH"] = {}
+        sub_form["endpoints"]["MQTT"]["SUBSCRIBE"] = {}
+        sub_form["endpoints"]["REST"]["POST"] = {}
+        sub_form["endpoints"]["REST"]["GET"] = {}
         sub_form["timestamp"] = time.time()
         try:
             response = requests.post(self.body["subscriptions"]["REST"]["service"], json.dumps(sub_form))
@@ -39,12 +40,12 @@ class MQTTSubscriber:
     def MQTTsubscribe(self):
         try:
             response = requests.get(self.body["subscriptions"]["REST"]["device"])
-            id = json.loads(response.text)["devices"][0]["id"]
+            id = json.loads(response.text)["devices"][0]["id"] #Assuming there is only one device
             response = requests.get(self.body["subscriptions"]["REST"]["device"]+"/"+id)
         except (requests.exceptions.ConnectionError, json.decoder.JSONDecodeError):
             print("Unable to connect to the catalog or to retrieve the device id")
             exit(1)
-        topic = json.loads(response.text)["endpoints"]["MQTT"]["SUBSCRIBE"]
+        topic = json.loads(response.text)["endpoints"]["MQTT"]["PUBLISH"]["temperature"]
         self.myMqttClient.mySubscribe(topic)
 
     def notify(self, topic, msg):
