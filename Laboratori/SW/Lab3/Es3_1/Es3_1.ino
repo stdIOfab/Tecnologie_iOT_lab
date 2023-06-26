@@ -3,7 +3,6 @@
 #include <ArduinoJson.h>
 #include "arduino_secret.h"
 #include <ArduinoHttpClient.h>
-#include <MBED_RPi_Pico_TimerInterrupt.h>
 
 #define BUFFER_SIZE 10000 //dimensione del buffer per ricevere i dati di GET dal Catalog
 
@@ -11,8 +10,6 @@ const String ID_DEVICE = "TIoT2"; //identifica univocamente il dispositivo
 const int RENEW_SUBSCRIPTION_TIME = 60; // secondi che intercorrono tra una registrazione e il successivo rinnovo
 long int lastRenewal = -RENEW_SUBSCRIPTION_TIME*1000;
 String subscriptionForm; //contenuto sottoforma di json testuale della richiesta di subscription
-
-MBED_RPI_PICO_Timer ITimer1(1); //timer per il rinnovo della subscription
 
 char ssid[] = SECRET_SSID;
 char pass[] = SECRET_PASS;
