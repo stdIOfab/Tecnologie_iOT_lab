@@ -115,9 +115,10 @@ class ResourceCatalog:
                    f'    "service": "http://{self.currentHost}:{self.hostPort}/services/subscription",' \
                    f'    "user":"http://{self.currentHost}:{self.hostPort}/users/subscription"}},' \
                    '"MQTT":{' \
+                   '    "device":{' \
                    f'    "hostname":"{self.messagebroker["domain"]}",' \
                    f'    "port":{self.messagebroker["port"]},' \
-                   '    "topic":"/tiot/2/catalog/subscription/devices/subscription"}}}'
+                   '    "topic":"/tiot/2/catalog/subscription/devices/subscription"}}}}'
 
 
         elif uri[0] == "devices":

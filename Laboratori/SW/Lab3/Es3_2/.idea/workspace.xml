@@ -5,12 +5,8 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="e3d24b70-df90-4216-94e6-fbe314dbb376" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/Catalog.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/MyMQTT.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/data.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../../Lab2/Es2_6/.idea/.name" beforeDir="false" afterPath="$PROJECT_DIR$/../../Lab2/Es2_6/.idea/.name" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/es2lab3.py" beforeDir="false" afterPath="$PROJECT_DIR$/es2lab3.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Catalog.py" beforeDir="false" afterPath="$PROJECT_DIR$/Catalog.py" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
